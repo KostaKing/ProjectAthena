@@ -14,6 +14,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AspireJavaScript.ServiceDefaults\ProjectAthena.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\ProjectAthena.Data\ProjectAthena.Data.csproj" />
+    <ProjectReference Include="..\ProjectAthena.Dtos\ProjectAthena.Dtos.csproj" />
   </ItemGroup>
 
 </Project>
