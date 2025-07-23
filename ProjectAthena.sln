@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectAthena.Data", "Proje
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectAthena.Dtos", "ProjectAthena.Dtos\ProjectAthena.Dtos.csproj", "{F5326900-E107-4861-9CA4-647849E92D16}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectAthena.DbWorkerService", "ProjectAthena.DbWorkerService\ProjectAthena.DbWorkerService.csproj", "{CB1A0310-0300-427F-A9B2-A272FA65574F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{F5326900-E107-4861-9CA4-647849E92D16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5326900-E107-4861-9CA4-647849E92D16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5326900-E107-4861-9CA4-647849E92D16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CB1A0310-0300-427F-A9B2-A272FA65574F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CB1A0310-0300-427F-A9B2-A272FA65574F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CB1A0310-0300-427F-A9B2-A272FA65574F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CB1A0310-0300-427F-A9B2-A272FA65574F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
