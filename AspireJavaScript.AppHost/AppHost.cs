@@ -3,14 +3,14 @@ using k8s.Models;
 var builder = DistributedApplication.CreateBuilder(args);
 var postgres = builder.AddPostgres("postgres").WithPgAdmin();
 var postgresVolume = postgres.WithDataVolume(isReadOnly: false);
-var ProjectAthenaDB = postgres.AddDatabase("ProjectAthena");
+var ProjectAthenaDB = postgres.AddDatabase("DefaultConnection");
 var ngrokAuthToken = builder.AddParameter("ngrok-auth-token", "2zg42YIX4zF8cSEjmsq70MuxIzj_6FKWxijKnH7ZeGL5rUK6t", secret: true);
 var dbService = builder.AddProject<Projects.ProjectAthena_DbWorkerService>("ProjectAthena-DbWorkerService").WithReference(ProjectAthenaDB).WaitFor(ProjectAthenaDB);
 
 
 var weatherApi = builder.AddProject<Projects.ProjectAthena_MinimalApi>("weatherapi")
     .WithExternalHttpEndpoints()
-    .WaitFor(dbService)
+    .WaitForCompletion(dbService)
     .WithReference(ProjectAthenaDB);
 
 
@@ -21,6 +21,7 @@ var reactClient = builder.AddNpmApp("reactvite", "../AspireJavaScript.Vite")
     .WithEnvironment("BROWSER", "none")
     .WithHttpEndpoint(env: "VITE_PORT")
     .WithExternalHttpEndpoints()
+    .WaitFor(weatherApi)
     .PublishAsDockerFile();
 
 
