@@ -144,6 +144,164 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all courses */
+        get: operations["GetAllCourses"];
+        put?: never;
+        /** Create a new course */
+        post: operations["CreateCourse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/courses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get course by ID */
+        get: operations["GetCourseById"];
+        /** Update an existing course */
+        put: operations["UpdateCourse"];
+        post?: never;
+        /** Delete a course */
+        delete: operations["DeleteCourse"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/courses/code/{courseCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get course by course code */
+        get: operations["GetCourseByCode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all enrollments */
+        get: operations["GetAllEnrollments"];
+        put?: never;
+        /** Create a new enrollment (assign student to course) */
+        post: operations["CreateEnrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enrollments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get enrollment by ID */
+        get: operations["GetEnrollmentById"];
+        put?: never;
+        post?: never;
+        /** Delete an enrollment */
+        delete: operations["DeleteEnrollment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enrollments/student/{studentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get enrollments by student ID */
+        get: operations["GetEnrollmentsByStudent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enrollments/course/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get enrollments by course ID */
+        get: operations["GetEnrollmentsByCourse"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enrollments/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update enrollment status and grade */
+        patch: operations["UpdateEnrollmentStatus"];
+        trace?: never;
+    };
+    "/api/enrollments/report/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Generate enrollment report for a course */
+        get: operations["GenerateEnrollmentReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -152,6 +310,110 @@ export interface components {
             currentPassword: string | null;
             newPassword: string | null;
             confirmNewPassword: string | null;
+        };
+        CourseDto: {
+            /** Format: uuid */
+            id?: string;
+            title: string | null;
+            description?: string | null;
+            courseCode: string | null;
+            /** Format: int32 */
+            credits?: number;
+            instructorId?: string | null;
+            instructorName?: string | null;
+            /** Format: date-time */
+            startDate?: string;
+            /** Format: date-time */
+            endDate?: string;
+            /** Format: int32 */
+            maxEnrollments?: number;
+            /** Format: int32 */
+            currentEnrollments?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+            isActive?: boolean;
+        };
+        CreateCourseDto: {
+            title: string | null;
+            description?: string | null;
+            courseCode: string | null;
+            /** Format: int32 */
+            credits?: number;
+            instructorId?: string | null;
+            /** Format: date-time */
+            startDate?: string;
+            /** Format: date-time */
+            endDate?: string;
+            /** Format: int32 */
+            maxEnrollments?: number;
+        };
+        CreateEnrollmentDto: {
+            studentId: string | null;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: date-time */
+            enrollmentDate?: string | null;
+        };
+        EnrollmentDto: {
+            /** Format: uuid */
+            id?: string;
+            studentId: string | null;
+            studentName?: string | null;
+            studentEmail?: string | null;
+            /** Format: uuid */
+            courseId?: string;
+            courseTitle?: string | null;
+            courseCode?: string | null;
+            /** Format: date-time */
+            enrollmentDate?: string;
+            status?: components["schemas"]["EnrollmentStatus"];
+            /** Format: double */
+            grade?: number | null;
+            /** Format: date-time */
+            completionDate?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+            isActive?: boolean;
+        };
+        EnrollmentReportDto: {
+            courseCode?: string | null;
+            courseTitle?: string | null;
+            instructorName?: string | null;
+            /** Format: int32 */
+            totalEnrollments?: number;
+            /** Format: int32 */
+            activeEnrollments?: number;
+            /** Format: int32 */
+            completedEnrollments?: number;
+            /** Format: int32 */
+            droppedEnrollments?: number;
+            /** Format: double */
+            averageGrade?: number;
+            /** Format: date-time */
+            startDate?: string;
+            /** Format: date-time */
+            endDate?: string;
+            studentEnrollments?: components["schemas"]["EnrollmentSummaryDto"][] | null;
+        };
+        /**
+         * Format: int32
+         * @enum {integer}
+         */
+        EnrollmentStatus: EnrollmentStatus;
+        EnrollmentSummaryDto: {
+            studentName?: string | null;
+            studentEmail?: string | null;
+            /** Format: date-time */
+            enrollmentDate?: string;
+            status?: components["schemas"]["EnrollmentStatus"];
+            /** Format: double */
+            grade?: number | null;
+            /** Format: date-time */
+            completionDate?: string | null;
         };
         HttpValidationProblemDetails: {
             type?: string | null;
@@ -188,6 +450,24 @@ export interface components {
             password: string | null;
             confirmPassword: string | null;
             role?: components["schemas"]["UserRole"];
+        };
+        UpdateCourseDto: {
+            title: string | null;
+            description?: string | null;
+            /** Format: int32 */
+            credits?: number;
+            instructorId?: string | null;
+            /** Format: date-time */
+            startDate?: string;
+            /** Format: date-time */
+            endDate?: string;
+            /** Format: int32 */
+            maxEnrollments?: number;
+        };
+        UpdateEnrollmentStatusDto: {
+            status?: components["schemas"]["EnrollmentStatus"];
+            /** Format: double */
+            grade?: number | null;
         };
         UserDto: {
             id: string | null;
@@ -442,6 +722,442 @@ export interface operations {
             };
         };
     };
+    GetAllCourses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseDto"][];
+                };
+            };
+        };
+    };
+    CreateCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCourseDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetCourseById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCourseDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetCourseByCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetAllEnrollments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentDto"][];
+                };
+            };
+        };
+    };
+    CreateEnrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEnrollmentDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetEnrollmentById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteEnrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetEnrollmentsByStudent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                studentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentDto"][];
+                };
+            };
+        };
+    };
+    GetEnrollmentsByCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentDto"][];
+                };
+            };
+        };
+    };
+    UpdateEnrollmentStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEnrollmentStatusDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GenerateEnrollmentReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentReportDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+}
+export enum EnrollmentStatus {
+    Value1 = 1,
+    Value2 = 2,
+    Value3 = 3,
+    Value4 = 4
 }
 export enum UserRole {
     Value1 = 1,

@@ -11,6 +11,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
+    public DbSet<Course> Courses { get; set; }
+    public DbSet<Enrollment> Enrollments { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -43,6 +46,83 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .IsUnique();
         });
 
+        // Configure BaseEntity properties for all entities
+        builder.Entity<Course>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(200);
+            
+            entity.Property(e => e.Description)
+                .HasMaxLength(1000);
+            
+            entity.Property(e => e.CourseCode)
+                .IsRequired()
+                .HasMaxLength(20);
+            
+            entity.Property(e => e.Credits)
+                .IsRequired();
+            
+            entity.Property(e => e.MaxEnrollments)
+                .IsRequired();
+            
+            entity.Property(e => e.CreatedAt)
+                .IsRequired()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.Property(e => e.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
+            
+            entity.HasIndex(e => e.CourseCode)
+                .IsUnique();
+            
+            entity.HasOne(e => e.Instructor)
+                .WithMany()
+                .HasForeignKey(e => e.InstructorId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<Enrollment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasConversion<int>();
+            
+            entity.Property(e => e.EnrollmentDate)
+                .IsRequired()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.Property(e => e.Grade)
+                .HasPrecision(5, 2);
+            
+            entity.Property(e => e.CreatedAt)
+                .IsRequired()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.Property(e => e.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
+            
+            entity.HasOne(e => e.Student)
+                .WithMany()
+                .HasForeignKey(e => e.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.Course)
+                .WithMany(c => c.Enrollments)
+                .HasForeignKey(e => e.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasIndex(e => new { e.StudentId, e.CourseId })
+                .IsUnique();
+        });
 
         // Configure Identity tables
         builder.Entity<IdentityRole>(entity =>

@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ProjectAthena.Data\ProjectAthena.Data.csproj" />
+  </ItemGroup>
+
 </Project>

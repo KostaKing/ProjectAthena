@@ -1,11 +1,17 @@
 import { useAuth } from '../../hooks/useAuth';
 import { UserRole } from '../../types/auth';
+import { AdminDashboard } from './AdminDashboard';
 import { Header } from '../layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Users, BookOpen, Settings } from 'lucide-react';
 
 export function Dashboard() {
   const { user } = useAuth();
+
+  // Route admin users to the dedicated AdminDashboard
+  if (user?.role === UserRole.Value3) {
+    return <AdminDashboard />;
+  }
 
   const getRoleSpecificContent = () => {
     if (!user) return null;

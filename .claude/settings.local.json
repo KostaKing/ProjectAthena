@@ -15,7 +15,8 @@
       "Bash(npm:*)",
       "Bash(node:*)",
       "Bash(npx:*)",
-      "Bash(./node_modules/.bin/tailwindcss:*)"
+      "Bash(./node_modules/.bin/tailwindcss:*)",
+      "Bash(dotnet build)"
     ],
     "deny": []
   }
