@@ -1,9 +1,11 @@
+using ProjectAthena.Data.Models.Students;
+
 namespace ProjectAthena.Data.Models;
 
 public class Enrollment : BaseEntity
 {
-    public required string StudentId { get; set; }
-    public ApplicationUser Student { get; set; } = null!;
+    public required Guid StudentId { get; set; }
+    public Student Student { get; set; } = null!;
     
     public Guid CourseId { get; set; }
     public Course Course { get; set; } = null!;

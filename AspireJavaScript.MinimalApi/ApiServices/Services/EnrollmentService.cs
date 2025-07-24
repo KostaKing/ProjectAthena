@@ -42,10 +42,12 @@ public class EnrollmentService : IEnrollmentService
     {
         try
         {
+            var studentGuid = Guid.Parse(studentId);
             var enrollments = await _context.Enrollments
                 .Include(e => e.Student)
+                    .ThenInclude(s => s.User)
                 .Include(e => e.Course)
-                .Where(e => e.StudentId == studentId && e.IsActive)
+                .Where(e => e.StudentId == studentGuid && e.IsActive)
                 .OrderBy(e => e.EnrollmentDate)
                 .ToListAsync();
 
@@ -64,10 +66,11 @@ public class EnrollmentService : IEnrollmentService
         {
             var enrollments = await _context.Enrollments
                 .Include(e => e.Student)
+                    .ThenInclude(s => s.User)
                 .Include(e => e.Course)
                 .Where(e => e.CourseId == courseId && e.IsActive)
-                .OrderBy(e => e.Student.LastName)
-                .ThenBy(e => e.Student.FirstName)
+                .OrderBy(e => e.Student.User.LastName)
+                .ThenBy(e => e.Student.User.FirstName)
                 .ToListAsync();
 
             return enrollments.Select(e => e.ToDto());
@@ -236,8 +239,9 @@ public class EnrollmentService : IEnrollmentService
     {
         try
         {
+            var studentGuid = Guid.Parse(studentId);
             return await _context.Enrollments.AnyAsync(e => 
-                e.StudentId == studentId && 
+                e.StudentId == studentGuid && 
                 e.CourseId == courseId && 
                 e.Status == EnrollmentStatus.Active && 
                 e.IsActive);

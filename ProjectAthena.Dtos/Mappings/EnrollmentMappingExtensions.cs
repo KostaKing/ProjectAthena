@@ -10,9 +10,9 @@ public static class EnrollmentMappingExtensions
         return new EnrollmentDto
         {
             Id = enrollment.Id,
-            StudentId = enrollment.StudentId,
-            StudentName = enrollment.Student?.FullName ?? string.Empty,
-            StudentEmail = enrollment.Student?.Email ?? string.Empty,
+            StudentId = enrollment.StudentId.ToString(),
+            StudentName = enrollment.Student?.User?.FullName ?? string.Empty,
+            StudentEmail = enrollment.Student?.User?.Email ?? string.Empty,
             CourseId = enrollment.CourseId,
             CourseTitle = enrollment.Course?.Title ?? string.Empty,
             CourseCode = enrollment.Course?.CourseCode ?? string.Empty,
@@ -31,7 +31,7 @@ public static class EnrollmentMappingExtensions
         var enrollmentDate = dto.EnrollmentDate ?? DateTime.UtcNow;
         return new Enrollment
         {
-            StudentId = dto.StudentId,
+            StudentId = Guid.Parse(dto.StudentId),
             CourseId = dto.CourseId,
             EnrollmentDate = enrollmentDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(enrollmentDate, DateTimeKind.Utc) : enrollmentDate.ToUniversalTime(),
             Status = Data.Models.EnrollmentStatus.Active
@@ -42,8 +42,8 @@ public static class EnrollmentMappingExtensions
     {
         return new EnrollmentSummaryDto
         {
-            StudentName = enrollment.Student?.FullName ?? string.Empty,
-            StudentEmail = enrollment.Student?.Email ?? string.Empty,
+            StudentName = enrollment.Student?.User?.FullName ?? string.Empty,
+            StudentEmail = enrollment.Student?.User?.Email ?? string.Empty,
             EnrollmentDate = enrollment.EnrollmentDate,
             Status = enrollment.Status,
             Grade = enrollment.Grade,

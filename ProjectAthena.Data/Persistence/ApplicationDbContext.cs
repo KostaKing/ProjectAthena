@@ -115,7 +115,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasDefaultValue(true);
             
             entity.HasOne(e => e.Student)
-                .WithMany()
+                .WithMany(s => s.Enrollments)
                 .HasForeignKey(e => e.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
             

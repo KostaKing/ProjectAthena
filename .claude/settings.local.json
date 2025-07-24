@@ -17,7 +17,8 @@
       "Bash(npx:*)",
       "Bash(./node_modules/.bin/tailwindcss:*)",
       "Bash(dotnet build)",
-      "Bash(dotnet ef migrations:*)"
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet build:*)"
     ],
     "deny": []
   }

@@ -5,6 +5,7 @@ using OpenTelemetry.Trace;
 using ProjectAthena.Data.Models;
 using ProjectAthena.Data.Persistence;
 using ProjectAthena.Data;
+using ProjectAthena.DbWorkerService.Seeders;
 
 namespace ProjectAthena.DbWorkerService;
 
@@ -19,7 +20,7 @@ public class Worker(
     private static readonly ActivitySource s_activitySource = new(ActivitySourceName);
 
     // Database deletion control
-    private const bool DELETE_DATABASE_ON_STARTUP = false; // Set to false to keep existing database
+    private const bool DELETE_DATABASE_ON_STARTUP = true; // Set to true to clean start
 
     private bool ShouldDeleteDatabase =>
         configuration.GetValue<bool>("Migration:DeleteDatabaseOnStartup", DELETE_DATABASE_ON_STARTUP);
@@ -58,7 +59,7 @@ public class Worker(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error during database migration and seeding");
-            activity?.RecordException(ex);
+            activity?.AddException(ex);
             throw;
         }
 
@@ -87,6 +88,10 @@ public class Worker(
     {
         logger.LogInformation("🚀 Starting database migration...");
 
+        // Check if database exists
+        var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
+        logger.LogInformation("Database connection status: {CanConnect}", canConnect);
+
         var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync(cancellationToken);
         var pendingMigrationsList = pendingMigrations.ToList();
 
@@ -113,18 +118,23 @@ public class Worker(
 
     private async Task SeedDataAsync(IServiceProvider scopedProvider, CancellationToken cancellationToken)
     {
-        logger.LogInformation("🌱 Starting data seeding...");
+        logger.LogInformation("🌱 Starting comprehensive data seeding...");
 
         var dbContext = scopedProvider.GetRequiredService<ApplicationDbContext>();
+        var userManager = scopedProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
         // Ensure roles exist first
         await EnsureRolesAsync(scopedProvider, cancellationToken);
 
-        // Seed sample users
-        await SeedUsersAsync(scopedProvider, cancellationToken);
+        // Get seeding configuration
+        var seedingConfig = configuration.GetSection("DatabaseSeeding").Get<SeedingConfiguration>() ?? new SeedingConfiguration();
 
+        // Use new seeding system
+        var masterSeederLogger = scopedProvider.GetRequiredService<ILogger<MasterSeeder>>();
+        var masterSeeder = new MasterSeeder(dbContext, userManager, seedingConfig, masterSeederLogger, scopedProvider);
+        await masterSeeder.SeedAllAsync();
 
-        logger.LogInformation("✅ Data seeding completed successfully");
+        logger.LogInformation("✅ Comprehensive data seeding completed successfully");
     }
 
     private async Task EnsureRolesAsync(IServiceProvider scopedProvider, CancellationToken cancellationToken)
@@ -143,93 +153,5 @@ public class Worker(
         }
     }
 
-    private async Task SeedUsersAsync(IServiceProvider scopedProvider, CancellationToken cancellationToken)
-    {
-        var userManager = scopedProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
-        // Seed Admin user
-        var adminEmail = "admin@projectathena.com";
-        if (await userManager.FindByEmailAsync(adminEmail) == null)
-        {
-            var adminUser = new ApplicationUser
-            {
-                FirstName = "System",
-                LastName = "Administrator",
-                UserName = adminEmail,
-                Email = adminEmail,
-                Role = UserRole.Admin,
-                EmailConfirmed = true,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var result = await userManager.CreateAsync(adminUser, "Admin123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
-                logger.LogInformation("Created admin user: {Email}", adminEmail);
-            }
-            else
-            {
-                logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
-        }
-
-        // Seed Teacher user
-        var teacherEmail = "teacher@projectathena.com";
-        if (await userManager.FindByEmailAsync(teacherEmail) == null)
-        {
-            var teacherUser = new ApplicationUser
-            {
-                FirstName = "John",
-                LastName = "Teacher",
-                UserName = teacherEmail,
-                Email = teacherEmail,
-                Role = UserRole.Teacher,
-                EmailConfirmed = true,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var result = await userManager.CreateAsync(teacherUser, "Teacher123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(teacherUser, "Teacher");
-                logger.LogInformation("Created teacher user: {Email}", teacherEmail);
-            }
-            else
-            {
-                logger.LogError("Failed to create teacher user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
-        }
-
-        // Seed Student user
-        var studentEmail = "student@projectathena.com";
-        if (await userManager.FindByEmailAsync(studentEmail) == null)
-        {
-            var studentUser = new ApplicationUser
-            {
-                FirstName = "Jane",
-                LastName = "Student",
-                UserName = studentEmail,
-                Email = studentEmail,
-                Role = UserRole.Student,
-                EmailConfirmed = true,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var result = await userManager.CreateAsync(studentUser, "Student123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(studentUser, "Student");
-                logger.LogInformation("Created student user: {Email}", studentEmail);
-            }
-            else
-            {
-                logger.LogError("Failed to create student user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
-        }
-    }
 
 }
