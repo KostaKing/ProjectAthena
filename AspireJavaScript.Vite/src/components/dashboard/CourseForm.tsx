@@ -45,12 +45,8 @@ export function CourseForm({ course, onClose }: CourseFormProps) {
     }
     
     // Note: In production, you'd fetch instructors from an API
-    // For now, we'll use mock data
-    setInstructors([
-      { id: '1', name: 'Dr. John Smith' },
-      { id: '2', name: 'Prof. Jane Doe' },
-      { id: '3', name: 'Dr. Mike Johnson' },
-    ]);
+    // For now, we'll leave empty until user management is implemented
+    setInstructors([]);
   }, [course]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

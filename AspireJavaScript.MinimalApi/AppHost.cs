@@ -4,6 +4,12 @@ using AspireJavaScript.MinimalApi.Endpoints;
 using ProjectAthena.MinimalApi.ApiServices.Interfaces;
 using ProjectAthena.MinimalApi.ApiServices.Services;
 using ProjectAthena.MinimalApi.Endpoints;
+using AspireJavaScript.MinimalApi.ApiServices.Interfaces.Students;
+using AspireJavaScript.MinimalApi.ApiServices.Services.Students;
+using AspireJavaScript.MinimalApi.ApiServices.Interfaces.Teachers;
+using AspireJavaScript.MinimalApi.ApiServices.Services.Teachers;
+using AspireJavaScript.MinimalApi.Endpoints.Students;
+using AspireJavaScript.MinimalApi.Endpoints.Teachers;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -79,6 +85,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddMemoryCache();
 
 // Add FluentValidation
@@ -141,6 +149,10 @@ app.MapAuthEndpoints();
 // Map course and enrollment endpoints
 app.MapCourseEndpoints();
 app.MapEnrollmentEndpoints();
+
+// Map student and teacher endpoints
+app.MapStudentEndpoints();
+app.MapTeacherEndpoints();
 
 
 app.Run();

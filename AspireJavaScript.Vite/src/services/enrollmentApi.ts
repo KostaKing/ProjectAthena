@@ -10,7 +10,7 @@ const API_BASE = '/api';
 
 class EnrollmentApiClient {
   private async getAuthHeaders(): Promise<HeadersInit> {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('projectathena_token');
     return {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),

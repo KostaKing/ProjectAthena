@@ -28,11 +28,12 @@ public static class EnrollmentMappingExtensions
 
     public static Enrollment ToEntity(this CreateEnrollmentDto dto)
     {
+        var enrollmentDate = dto.EnrollmentDate ?? DateTime.UtcNow;
         return new Enrollment
         {
             StudentId = dto.StudentId,
             CourseId = dto.CourseId,
-            EnrollmentDate = dto.EnrollmentDate ?? DateTime.UtcNow,
+            EnrollmentDate = enrollmentDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(enrollmentDate, DateTimeKind.Utc) : enrollmentDate.ToUniversalTime(),
             Status = Data.Models.EnrollmentStatus.Active
         };
     }

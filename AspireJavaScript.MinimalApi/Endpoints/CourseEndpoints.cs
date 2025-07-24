@@ -34,7 +34,7 @@ public static class CourseEndpoints
             .WithSummary("Create a new course")
             .Produces<CourseDto>(201)
             .Produces(400)
-            .RequireAuthorization();
+            .RequireAuthorization("Admin");
 
         group.MapPut("/{id:guid}", UpdateCourse)
             .WithName("UpdateCourse")
@@ -42,14 +42,14 @@ public static class CourseEndpoints
             .Produces<CourseDto>(200)
             .Produces(404)
             .Produces(400)
-            .RequireAuthorization();
+            .RequireAuthorization("Admin");
 
         group.MapDelete("/{id:guid}", DeleteCourse)
             .WithName("DeleteCourse")
             .WithSummary("Delete a course")
             .Produces(204)
             .Produces(404)
-            .RequireAuthorization();
+            .RequireAuthorization("Admin");
     }
 
     private static async Task<IResult> GetAllCourses(ICourseService courseService)

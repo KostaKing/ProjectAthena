@@ -34,9 +34,9 @@ public static class CourseMappingExtensions
             Description = dto.Description,
             CourseCode = dto.CourseCode,
             Credits = dto.Credits,
-            InstructorId = dto.InstructorId,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
+            InstructorId = string.IsNullOrWhiteSpace(dto.InstructorId) ? null : dto.InstructorId,
+            StartDate = dto.StartDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc) : dto.StartDate.ToUniversalTime(),
+            EndDate = dto.EndDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dto.EndDate, DateTimeKind.Utc) : dto.EndDate.ToUniversalTime(),
             MaxEnrollments = dto.MaxEnrollments
         };
     }
@@ -46,9 +46,9 @@ public static class CourseMappingExtensions
         course.Title = dto.Title;
         course.Description = dto.Description;
         course.Credits = dto.Credits;
-        course.InstructorId = dto.InstructorId;
-        course.StartDate = dto.StartDate;
-        course.EndDate = dto.EndDate;
+        course.InstructorId = string.IsNullOrWhiteSpace(dto.InstructorId) ? null : dto.InstructorId;
+        course.StartDate = dto.StartDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc) : dto.StartDate.ToUniversalTime();
+        course.EndDate = dto.EndDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dto.EndDate, DateTimeKind.Utc) : dto.EndDate.ToUniversalTime();
         course.MaxEnrollments = dto.MaxEnrollments;
         course.UpdatedAt = DateTime.UtcNow;
     }

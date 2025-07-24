@@ -17,33 +17,33 @@ public static class EnrollmentEndpoints
             .WithName("GetAllEnrollments")
             .WithSummary("Get all enrollments")
             .Produces<IEnumerable<EnrollmentDto>>(200)
-            .RequireAuthorization();
+            .RequireAuthorization("Teacher");
 
         group.MapGet("/{id:guid}", GetEnrollmentById)
             .WithName("GetEnrollmentById")
             .WithSummary("Get enrollment by ID")
             .Produces<EnrollmentDto>(200)
             .Produces(404)
-            .RequireAuthorization();
+            .RequireAuthorization("Student");
 
         group.MapGet("/student/{studentId}", GetEnrollmentsByStudent)
             .WithName("GetEnrollmentsByStudent")
             .WithSummary("Get enrollments by student ID")
             .Produces<IEnumerable<EnrollmentDto>>(200)
-            .RequireAuthorization();
+            .RequireAuthorization("Student");
 
         group.MapGet("/course/{courseId:guid}", GetEnrollmentsByCourse)
             .WithName("GetEnrollmentsByCourse")
             .WithSummary("Get enrollments by course ID")
             .Produces<IEnumerable<EnrollmentDto>>(200)
-            .RequireAuthorization();
+            .RequireAuthorization("Teacher");
 
         group.MapPost("/", CreateEnrollment)
             .WithName("CreateEnrollment")
             .WithSummary("Create a new enrollment (assign student to course)")
             .Produces<EnrollmentDto>(201)
             .Produces(400)
-            .RequireAuthorization();
+            .RequireAuthorization("Admin");
 
         group.MapPatch("/{id:guid}/status", UpdateEnrollmentStatus)
             .WithName("UpdateEnrollmentStatus")
@@ -51,21 +51,21 @@ public static class EnrollmentEndpoints
             .Produces(200)
             .Produces(404)
             .Produces(400)
-            .RequireAuthorization();
+            .RequireAuthorization("Teacher");
 
         group.MapDelete("/{id:guid}", DeleteEnrollment)
             .WithName("DeleteEnrollment")
             .WithSummary("Delete an enrollment")
             .Produces(204)
             .Produces(404)
-            .RequireAuthorization();
+            .RequireAuthorization("Admin");
 
         group.MapGet("/report/{courseId:guid}", GenerateEnrollmentReport)
             .WithName("GenerateEnrollmentReport")
             .WithSummary("Generate enrollment report for a course")
             .Produces<EnrollmentReportDto>(200)
             .Produces(404)
-            .RequireAuthorization();
+            .RequireAuthorization("Teacher");
     }
 
     private static async Task<IResult> GetAllEnrollments(IEnrollmentService enrollmentService)

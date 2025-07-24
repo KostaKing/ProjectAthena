@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectAthena.Data.Models;
+using ProjectAthena.Data.Models.Students;
+using ProjectAthena.Data.Models.Teachers;
 
 namespace ProjectAthena.Data.Persistence;
 
@@ -13,6 +15,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Course> Courses { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
+    public DbSet<Student> Students { get; set; }
+    public DbSet<Teacher> Teachers { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -121,6 +125,96 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .OnDelete(DeleteBehavior.Cascade);
             
             entity.HasIndex(e => new { e.StudentId, e.CourseId })
+                .IsUnique();
+        });
+
+        // Configure Student
+        builder.Entity<Student>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            
+            entity.Property(e => e.StudentNumber)
+                .IsRequired()
+                .HasMaxLength(20);
+            
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20);
+            
+            entity.Property(e => e.Address)
+                .HasMaxLength(500);
+            
+            entity.Property(e => e.EmergencyContact)
+                .HasMaxLength(200);
+            
+            entity.Property(e => e.EmergencyContactPhone)
+                .HasMaxLength(20);
+            
+            entity.Property(e => e.CreatedAt)
+                .IsRequired()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.Property(e => e.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
+            
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasIndex(e => e.StudentNumber)
+                .IsUnique();
+            
+            entity.HasIndex(e => e.UserId)
+                .IsUnique();
+        });
+
+        // Configure Teacher
+        builder.Entity<Teacher>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            
+            entity.Property(e => e.EmployeeNumber)
+                .IsRequired()
+                .HasMaxLength(20);
+            
+            entity.Property(e => e.Department)
+                .HasMaxLength(100);
+            
+            entity.Property(e => e.Title)
+                .HasMaxLength(100);
+            
+            entity.Property(e => e.Qualifications)
+                .HasMaxLength(1000);
+            
+            entity.Property(e => e.Specialization)
+                .HasMaxLength(200);
+            
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20);
+            
+            entity.Property(e => e.OfficeLocation)
+                .HasMaxLength(100);
+            
+            entity.Property(e => e.CreatedAt)
+                .IsRequired()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.Property(e => e.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
+            
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasIndex(e => e.EmployeeNumber)
+                .IsUnique();
+            
+            entity.HasIndex(e => e.UserId)
                 .IsUnique();
         });
 
