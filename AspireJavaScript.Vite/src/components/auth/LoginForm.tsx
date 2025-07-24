@@ -62,7 +62,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     }
   };
 
-  const handleDemoLogin = async (role: 'admin' | 'teacher' | 'student') => {
+  const handleDemoFill = (role: 'admin' | 'teacher' | 'student') => {
     const demoCredentials = {
       admin: { email: 'admin@projectathena.com', password: 'Admin123!' },
       teacher: { email: 'teacher@projectathena.com', password: 'Teacher123!' },
@@ -72,11 +72,8 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     const credentials = demoCredentials[role];
     setFormData(credentials);
     
-    try {
-      await login(credentials.email, credentials.password);
-    } catch (error) {
-      // Error handling is done in the auth context
-    }
+    // Clear any existing errors
+    setErrors({});
   };
 
   return (
@@ -169,7 +166,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleDemoLogin('admin')}
+            onClick={() => handleDemoFill('admin')}
             disabled={isLoading}
             className="text-xs"
           >
@@ -178,7 +175,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleDemoLogin('teacher')}
+            onClick={() => handleDemoFill('teacher')}
             disabled={isLoading}
             className="text-xs"
           >
@@ -187,7 +184,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleDemoLogin('student')}
+            onClick={() => handleDemoFill('student')}
             disabled={isLoading}
             className="text-xs"
           >
