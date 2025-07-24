@@ -1,8 +1,6 @@
-import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { UserRole } from '../../types/auth';
 import { Header } from '../layout/Header';
-import { WeatherDashboard } from '../weather/WeatherDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Users, BookOpen, Settings } from 'lucide-react';
 
@@ -13,7 +11,7 @@ export function Dashboard() {
     if (!user) return null;
 
     switch (user.role) {
-      case UserRole.Admin:
+      case UserRole.Value3: // Admin
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card>
@@ -54,7 +52,7 @@ export function Dashboard() {
             </Card>
           </div>
         );
-      case UserRole.Teacher:
+      case UserRole.Value2: // Teacher
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Card>
@@ -85,7 +83,7 @@ export function Dashboard() {
             </Card>
           </div>
         );
-      case UserRole.Student:
+      case UserRole.Value1: // Student
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Card>
@@ -137,8 +135,6 @@ export function Dashboard() {
           </div>
 
           {getRoleSpecificContent()}
-
-          <WeatherDashboard />
         </div>
       </main>
     </div>

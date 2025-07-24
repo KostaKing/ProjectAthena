@@ -144,58 +144,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/weatherforecast": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get all weather forecasts
-         * @description Returns a list of weather forecasts
-         */
-        get: operations["GetWeatherForecasts"];
-        put?: never;
-        /**
-         * Create a new weather forecast
-         * @description Creates a new weather forecast with the provided data
-         */
-        post: operations["CreateWeatherForecast"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/weatherforecast/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get weather forecast by ID
-         * @description Returns a specific weather forecast by its ID
-         */
-        get: operations["GetWeatherForecastById"];
-        /**
-         * Update weather forecast
-         * @description Updates an existing weather forecast
-         */
-        put: operations["UpdateWeatherForecast"];
-        post?: never;
-        /**
-         * Delete weather forecast
-         * @description Deletes a weather forecast by ID
-         */
-        delete: operations["DeleteWeatherForecast"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -204,18 +152,6 @@ export interface components {
             currentPassword: string | null;
             newPassword: string | null;
             confirmNewPassword: string | null;
-        };
-        CreateWeatherForecastDto: {
-            /** Format: date */
-            date?: string;
-            /** Format: int32 */
-            temperatureC?: number;
-            summary?: string | null;
-            location?: string | null;
-            /** Format: double */
-            humidity?: number;
-            /** Format: int32 */
-            windSpeed?: number;
         };
         HttpValidationProblemDetails: {
             type?: string | null;
@@ -253,16 +189,6 @@ export interface components {
             confirmPassword: string | null;
             role?: components["schemas"]["UserRole"];
         };
-        UpdateWeatherForecastDto: {
-            /** Format: int32 */
-            temperatureC?: number;
-            summary?: string | null;
-            location?: string | null;
-            /** Format: double */
-            humidity?: number;
-            /** Format: int32 */
-            windSpeed?: number;
-        };
         UserDto: {
             id: string | null;
             firstName: string | null;
@@ -280,21 +206,7 @@ export interface components {
          * Format: int32
          * @enum {integer}
          */
-        UserRole: 1 | 2 | 3;
-        WeatherForecastDto: {
-            /** Format: date */
-            date?: string;
-            /** Format: int32 */
-            temperatureC?: number;
-            /** Format: int32 */
-            temperatureF?: number;
-            summary?: string | null;
-            location?: string | null;
-            /** Format: double */
-            humidity?: number;
-            /** Format: int32 */
-            windSpeed?: number;
-        };
+        UserRole: UserRole;
     };
     responses: never;
     parameters: never;
@@ -530,110 +442,9 @@ export interface operations {
             };
         };
     };
-    GetWeatherForecasts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WeatherForecastDto"][];
-                };
-            };
-        };
-    };
-    CreateWeatherForecast: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateWeatherForecastDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    GetWeatherForecastById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UpdateWeatherForecast: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateWeatherForecastDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    DeleteWeatherForecast: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
+}
+export enum UserRole {
+    Value1 = 1,
+    Value2 = 2,
+    Value3 = 3
 }

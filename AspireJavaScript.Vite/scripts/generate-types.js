@@ -11,12 +11,12 @@ if (!existsSync(typesDir)) {
 }
 
 // Get the API URL from environment variables set by Aspire
-const apiUrl = process.env.services__weatherapi__https__0 || 
-              process.env.services__weatherapi__http__0;
+const apiUrl = process.env.services__ProjectAthenaApi__https__0 || 
+              process.env.services__ProjectAthenaApi__http__0;
 
 if (!apiUrl) {
     console.error('❌ API URL not found in environment variables.');
-    console.error('Make sure the Aspire app is running and the weatherapi service is available.');
+    console.error('Make sure the Aspire app is running and the API service is available.');
     process.exit(1);
 }
 
@@ -24,7 +24,7 @@ const swaggerUrl = `${apiUrl}/swagger/v1/swagger.json`;
 console.log(`🔄 Generating types from: ${swaggerUrl}`);
 
 try {
-    execSync(`npx openapi-typescript "${swaggerUrl}" -o src/types/api.ts`, {
+    execSync(`npx openapi-typescript "${swaggerUrl}" -o src/types/api.ts --enum`, {
         stdio: 'inherit',
         env: {
             ...process.env,

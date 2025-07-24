@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { UserRole } from '../../types/auth';
 import { Button } from '../ui/button';
@@ -9,11 +8,11 @@ export function Header() {
 
   const getRoleColor = (role: UserRole) => {
     switch (role) {
-      case UserRole.Admin:
+      case UserRole.Value3: // Admin
         return 'bg-red-100 text-red-800';
-      case UserRole.Teacher:
+      case UserRole.Value2: // Teacher
         return 'bg-blue-100 text-blue-800';
-      case UserRole.Student:
+      case UserRole.Value1: // Student
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -22,11 +21,11 @@ export function Header() {
 
   const getRoleName = (role: UserRole) => {
     switch (role) {
-      case UserRole.Admin:
+      case UserRole.Value3: // Admin
         return 'Admin';
-      case UserRole.Teacher:
+      case UserRole.Value2: // Teacher
         return 'Teacher';
-      case UserRole.Student:
+      case UserRole.Value1: // Student
         return 'Student';
       default:
         return 'Unknown';

@@ -28,7 +28,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     email: '',
     password: '',
     confirmPassword: '',
-    role: UserRole.Student,
+    role: UserRole.Value1, // Student
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -87,7 +87,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (formData.role === UserRole.Admin) {
+    if (formData.role === UserRole.Value3) { // Admin
       newErrors.role = 'Cannot register as Admin through this form';
     }
 
@@ -189,8 +189,8 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.role ? 'border-red-500' : ''}`}
               disabled={isLoading}
             >
-              <option value={UserRole.Student}>Student</option>
-              <option value={UserRole.Teacher}>Teacher</option>
+              <option value={UserRole.Value1}>Student</option>
+              <option value={UserRole.Value2}>Teacher</option>
             </select>
             {errors.role && (
               <p className="text-sm text-red-500">{errors.role}</p>

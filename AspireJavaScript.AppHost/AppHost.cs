@@ -11,7 +11,7 @@ var ngrokAuthToken = builder.AddParameter("ngrok-auth-token", "2zg42YIX4zF8cSEjm
 var dbService = builder.AddProject<Projects.ProjectAthena_DbWorkerService>("ProjectAthena-DbWorkerService").WithReference(ProjectAthenaDB).WaitFor(ProjectAthenaDB);
 
 
-var weatherApi = builder.AddProject<Projects.ProjectAthena_MinimalApi>("weatherapi")
+var projectAthenaApi = builder.AddProject<Projects.ProjectAthena_MinimalApi>("ProjectAthenaApi")
     .WithExternalHttpEndpoints()
     .WaitForCompletion(dbService)
     .WithReference(ProjectAthenaDB);
@@ -20,11 +20,11 @@ var weatherApi = builder.AddProject<Projects.ProjectAthena_MinimalApi>("weathera
 
 
 var reactClient = builder.AddNpmApp("reactvite", "../AspireJavaScript.Vite")
-    .WithReference(weatherApi)
+    .WithReference(projectAthenaApi)
     .WithEnvironment("BROWSER", "none")
     .WithHttpEndpoint(env: "VITE_PORT")
     .WithExternalHttpEndpoints()
-    .WaitFor(weatherApi)
+    .WaitFor(projectAthenaApi)
     .PublishAsDockerFile();
 
 
@@ -32,7 +32,7 @@ var reactClient = builder.AddNpmApp("reactvite", "../AspireJavaScript.Vite")
 //builder.AddNgrok("ngrok")
 //    .WithAuthToken(ngrokAuthToken)
 //    // Add tunnel for API service (will get a random ngrok URL)
-//    .WithTunnelEndpoint(weatherApi, "https", "smartfixpro.ngrok-free.app")
+//    .WithTunnelEndpoint(projectAthenaApi, "https", "smartfixpro.ngrok-free.app")
 //    // Add tunnel for Client service (will get a separate random ngrok URL)  
 //    .WithTunnelEndpoint(reactClient, "https", "smartfixproclient.ngrok-free.app");
 builder.Build().Run();

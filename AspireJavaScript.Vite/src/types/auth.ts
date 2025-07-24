@@ -1,29 +1,16 @@
-import { components } from './api';
+import { components, UserRole as ApiUserRole } from './api';
 
+// Re-export API types for convenience
 export type UserDto = components['schemas']['UserDto'];
 export type LoginRequestDto = components['schemas']['LoginRequestDto'];
 export type LoginResponseDto = components['schemas']['LoginResponseDto'];
 export type RegisterRequestDto = components['schemas']['RegisterRequestDto'];
 export type ChangePasswordRequestDto = components['schemas']['ChangePasswordRequestDto'];
 export type RefreshTokenRequestDto = components['schemas']['RefreshTokenRequestDto'];
+export { ApiUserRole as UserRole };
 
-export interface AuthUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: UserRole;
-  fullName: string;
-  isActive: boolean;
-  createdAt: string;
-  lastLoginAt?: string;
-}
-
-export enum UserRole {
-  Student = 1,
-  Teacher = 2,
-  Admin = 3
-}
+// Use the API-generated UserDto as AuthUser
+export type AuthUser = UserDto;
 
 export interface AuthState {
   user: AuthUser | null;

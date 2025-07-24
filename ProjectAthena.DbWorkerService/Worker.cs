@@ -123,8 +123,6 @@ public class Worker(
         // Seed sample users
         await SeedUsersAsync(scopedProvider, cancellationToken);
 
-        // Seed sample weather data
-        await SeedWeatherDataAsync(dbContext, cancellationToken);
 
         logger.LogInformation("✅ Data seeding completed successfully");
     }
@@ -234,41 +232,4 @@ public class Worker(
         }
     }
 
-    private async Task SeedWeatherDataAsync(ApplicationDbContext dbContext, CancellationToken cancellationToken)
-    {
-        if (!await dbContext.WeatherForecasts.AnyAsync(cancellationToken))
-        {
-            var summaries = new[]
-            {
-                "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-            };
-
-            var locations = new[]
-            {
-                "New York", "London", "Tokyo", "Sydney", "Paris", "Berlin", "Moscow", "Cairo", "Mumbai", "Beijing"
-            };
-
-            var forecasts = new List<WeatherForecast>();
-
-            for (int i = 1; i <= 10; i++)
-            {
-                forecasts.Add(new WeatherForecast
-                {
-                    Date = DateOnly.FromDateTime(DateTime.Now.AddDays(i)),
-                    TemperatureC = Random.Shared.Next(-20, 55),
-                    Summary = summaries[Random.Shared.Next(summaries.Length)],
-                    Location = locations[Random.Shared.Next(locations.Length)],
-                    Humidity = Random.Shared.Next(30, 100),
-                    WindSpeed = Random.Shared.Next(0, 50),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                });
-            }
-
-            dbContext.WeatherForecasts.AddRange(forecasts);
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("Seeded {Count} weather forecasts", forecasts.Count);
-        }
-    }
 }

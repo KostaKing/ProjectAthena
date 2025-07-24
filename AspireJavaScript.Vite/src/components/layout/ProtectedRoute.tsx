@@ -54,11 +54,11 @@ export function ProtectedRoute({
 
 function getRoleName(role: UserRole): string {
   switch (role) {
-    case UserRole.Admin:
+    case UserRole.Value3: // Admin
       return 'Admin';
-    case UserRole.Teacher:
+    case UserRole.Value2: // Teacher
       return 'Teacher';
-    case UserRole.Student:
+    case UserRole.Value1: // Student
       return 'Student';
     default:
       return 'Unknown';

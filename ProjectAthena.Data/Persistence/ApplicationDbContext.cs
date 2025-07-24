@@ -11,7 +11,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
-    public DbSet<WeatherForecast> WeatherForecasts => Set<WeatherForecast>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -44,29 +43,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .IsUnique();
         });
 
-        // Configure WeatherForecast
-        builder.Entity<WeatherForecast>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-
-            entity.Property(e => e.Date)
-                .IsRequired();
-
-            entity.Property(e => e.TemperatureC)
-                .IsRequired();
-
-            entity.Property(e => e.Summary)
-                .HasMaxLength(200);
-
-            entity.Property(e => e.Location)
-                .HasMaxLength(100);
-
-            entity.Property(e => e.Humidity)
-                .HasPrecision(5, 2);
-
-            entity.Property(e => e.WindSpeed)
-                .IsRequired();
-        });
 
         // Configure Identity tables
         builder.Entity<IdentityRole>(entity =>
