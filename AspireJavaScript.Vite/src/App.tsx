@@ -1,8 +1,8 @@
 import { AuthProvider } from './hooks/useAuth';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { Dashboard } from './components/dashboard/Dashboard';
-import { Toaster } from './components/ui/toaster';
-import './globals.css';
+import { Toaster } from './components/ui/sonner';
+import './index.css';
 
 function App() {
   return (

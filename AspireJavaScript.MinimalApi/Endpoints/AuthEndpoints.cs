@@ -21,6 +21,7 @@ public static class AuthEndpoints
             .WithDescription("Authenticate user with email and password")
             .Produces<LoginResponseDto>()
             .ProducesValidationProblem()
+            .AllowAnonymous()
             .Produces(401);
 
         authGroup.MapPost("/register", RegisterAsync)
