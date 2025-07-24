@@ -5,7 +5,10 @@
       "Bash(npm run generate-types:*)",
       "Bash(dotnet add reference:*)",
       "Bash(rm:*)",
-      "WebFetch(domain:learn.microsoft.com)"
+      "WebFetch(domain:learn.microsoft.com)",
+      "Bash(dotnet ef migrations add:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(docker volume:*)"
     ],
     "deny": []
   }

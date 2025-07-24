@@ -19,7 +19,7 @@ public class Worker(
     private static readonly ActivitySource s_activitySource = new(ActivitySourceName);
 
     // Database deletion control
-    private const bool DELETE_DATABASE_ON_STARTUP = true; // Set to false to keep existing database
+    private const bool DELETE_DATABASE_ON_STARTUP = false; // Set to false to keep existing database
 
     private bool ShouldDeleteDatabase =>
         configuration.GetValue<bool>("Migration:DeleteDatabaseOnStartup", DELETE_DATABASE_ON_STARTUP);
@@ -50,15 +50,8 @@ public class Worker(
 
             await RunMigrationAsync(dbContext, cancellationToken);
 
-            // Only seed data if database was deleted
-            if (databaseWasDeleted)
-            {
-                await SeedDataAsync(scope.ServiceProvider, cancellationToken);
-            }
-            else
-            {
-                logger.LogInformation("Skipping data seeding - database was not deleted");
-            }
+            // Always attempt seeding (methods check if data already exists)
+            await SeedDataAsync(scope.ServiceProvider, cancellationToken);
 
             logger.LogInformation("Database migration and seeding completed successfully");
         }

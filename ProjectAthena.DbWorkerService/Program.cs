@@ -16,7 +16,7 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddSource(Worker.ActivitySourceName));
 
 // Add the PostgreSQL DbContext using Aspire
-builder.AddNpgsqlDbContext<ApplicationDbContext>("DefaultConnection");
+builder.AddNpgsqlDbContext<ApplicationDbContext>("ProjectAthenaDB");
 
 // Add Identity services for seeding
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>

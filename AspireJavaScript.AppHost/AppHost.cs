@@ -1,9 +1,12 @@
 using k8s.Models;
 
 var builder = DistributedApplication.CreateBuilder(args);
-var postgres = builder.AddPostgres("postgres").WithPgAdmin();
-var postgresVolume = postgres.WithDataVolume(isReadOnly: false);
-var ProjectAthenaDB = postgres.AddDatabase("DefaultConnection");
+var username = builder.AddParameter("postgres-username", "postgres");
+var password = builder.AddParameter("postgres-password", "mypassword123");
+var postgres = builder.AddPostgres("postgres", username, password)
+    .WithDataVolume(isReadOnly: false)
+    .WithPgAdmin();
+var ProjectAthenaDB = postgres.AddDatabase("ProjectAthenaDB");
 var ngrokAuthToken = builder.AddParameter("ngrok-auth-token", "2zg42YIX4zF8cSEjmsq70MuxIzj_6FKWxijKnH7ZeGL5rUK6t", secret: true);
 var dbService = builder.AddProject<Projects.ProjectAthena_DbWorkerService>("ProjectAthena-DbWorkerService").WithReference(ProjectAthenaDB).WaitFor(ProjectAthenaDB);
 

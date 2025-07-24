@@ -17,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 // Add PostgreSQL DbContext
-builder.AddNpgsqlDbContext<ApplicationDbContext>("DefaultConnection");
+builder.AddNpgsqlDbContext<ApplicationDbContext>("ProjectAthenaDB");
 
 // Add Identity services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>

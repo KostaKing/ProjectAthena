@@ -116,21 +116,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 Id = "1",
                 Name = "Admin",
                 NormalizedName = "ADMIN",
-                ConcurrencyStamp = Guid.NewGuid().ToString()
+                ConcurrencyStamp = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
             },
             new IdentityRole
             {
                 Id = "2",
                 Name = "Teacher",
                 NormalizedName = "TEACHER",
-                ConcurrencyStamp = Guid.NewGuid().ToString()
+                ConcurrencyStamp = "b2c3d4e5-f6g7-8901-bcde-f23456789012"
             },
             new IdentityRole
             {
                 Id = "3",
                 Name = "Student",
                 NormalizedName = "STUDENT",
-                ConcurrencyStamp = Guid.NewGuid().ToString()
+                ConcurrencyStamp = "c3d4e5f6-g7h8-9012-cdef-345678901234"
             }
         );
     }
