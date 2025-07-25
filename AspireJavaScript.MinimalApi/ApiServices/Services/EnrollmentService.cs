@@ -23,34 +23,31 @@ public class EnrollmentService : IEnrollmentService
     {
         try
         {
+            // Validate pagination parameters
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100; // Prevent excessive page sizes
+
             var query = _context.Enrollments
-                .Include(e => e.Student)
-                    .ThenInclude(s => s.User)
-                .Include(e => e.Course)
+                .AsNoTracking() // Performance optimization for read-only operations
                 .Where(e => e.IsActive);
 
-            // Apply search filter
-            if (!string.IsNullOrEmpty(search))
-            {
-                var searchLower = search.ToLower();
-                query = query.Where(e => 
-                    e.Student.User.FirstName.ToLower().Contains(searchLower) ||
-                    e.Student.User.LastName.ToLower().Contains(searchLower) ||
-                    e.Student.User.Email.ToLower().Contains(searchLower) ||
-                    e.Course.Title.ToLower().Contains(searchLower) ||
-                    e.Course.CourseCode.ToLower().Contains(searchLower));
-            }
 
             // Apply status filter
-            if (status.HasValue)
+            if (status.HasValue && Enum.IsDefined(typeof(EnrollmentStatus), status.Value))
             {
                 query = query.Where(e => e.Status == (EnrollmentStatus)status.Value);
             }
 
+            // Get total count before pagination
             var totalCount = await query.CountAsync();
             
+            // Apply pagination and includes
             var enrollments = await query
-                .OrderBy(e => e.EnrollmentDate)
+                .Include(e => e.Student)
+                    .ThenInclude(s => s.User)
+                .Include(e => e.Course)
+                .OrderByDescending(e => e.EnrollmentDate) // More recent first
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -65,7 +62,8 @@ public class EnrollmentService : IEnrollmentService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving enrollments with search: {Search}, status: {Status}", search, status);
+            _logger.LogError(ex, "Error retrieving enrollments with search: {Search}, status: {Status}, page: {Page}, pageSize: {PageSize}", 
+                search, status, page, pageSize);
             throw;
         }
     }
@@ -74,13 +72,19 @@ public class EnrollmentService : IEnrollmentService
     {
         try
         {
-            var studentGuid = Guid.Parse(studentId);
+            // Validate and parse student ID
+            if (string.IsNullOrEmpty(studentId) || !Guid.TryParse(studentId, out var studentGuid))
+            {
+                throw new ArgumentException("Invalid student ID", nameof(studentId));
+            }
+
             var enrollments = await _context.Enrollments
+                .AsNoTracking() // Performance optimization for read-only operations
                 .Include(e => e.Student)
                     .ThenInclude(s => s.User)
                 .Include(e => e.Course)
                 .Where(e => e.StudentId == studentGuid && e.IsActive)
-                .OrderBy(e => e.EnrollmentDate)
+                .OrderByDescending(e => e.EnrollmentDate) // More recent first
                 .ToListAsync();
 
             return enrollments.Select(e => e.ToDto());
@@ -96,7 +100,14 @@ public class EnrollmentService : IEnrollmentService
     {
         try
         {
+            // Validate course ID
+            if (courseId == Guid.Empty)
+            {
+                throw new ArgumentException("Course ID cannot be empty", nameof(courseId));
+            }
+
             var enrollments = await _context.Enrollments
+                .AsNoTracking() // Performance optimization for read-only operations
                 .Include(e => e.Student)
                     .ThenInclude(s => s.User)
                 .Include(e => e.Course)
@@ -118,7 +129,14 @@ public class EnrollmentService : IEnrollmentService
     {
         try
         {
+            // Validate enrollment ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("Enrollment ID cannot be empty", nameof(id));
+            }
+
             var enrollment = await _context.Enrollments
+                .AsNoTracking() // Performance optimization for read-only operations
                 .Include(e => e.Student)
                     .ThenInclude(s => s.User)
                 .Include(e => e.Course)
@@ -301,93 +319,74 @@ public class EnrollmentService : IEnrollmentService
     {
         try
         {
+            // Input validation
+            if (!ValidateReportRequest(request, out var validationErrors))
+            {
+                throw new ArgumentException($"Invalid request parameters: {string.Join(", ", validationErrors)}");
+            }
+
+            // Build optimized query with selective loading
             var query = _context.Enrollments
-                .Include(e => e.Student)
-                    .ThenInclude(s => s.User)
-                .Include(e => e.Course)
-                    .ThenInclude(c => c.Instructor)
+                .AsNoTracking() // Performance optimization for read-only operations
                 .Where(e => e.IsActive);
 
-            // Apply filters
-            if (request.CourseId.HasValue)
-                query = query.Where(e => e.CourseId == request.CourseId.Value);
+            // Apply filters with null checks and optimized predicates
+            query = ApplyFilters(query, request);
 
-            if (!string.IsNullOrEmpty(request.StudentId))
+            // Use a single query with projection to avoid N+1 problems
+            var enrollmentData = await query
+                .Select(e => new
+                {
+                    Enrollment = e,
+                    StudentUser = e.Student.User,
+                    Course = e.Course,
+                    Instructor = e.Course.Instructor
+                })
+                .ToListAsync();
+
+            if (!enrollmentData.Any())
             {
-                var studentGuid = Guid.Parse(request.StudentId);
-                query = query.Where(e => e.StudentId == studentGuid);
+                _logger.LogInformation("No enrollments found for the given criteria");
+                return CreateEmptyReport(request);
             }
 
-            if (!string.IsNullOrEmpty(request.InstructorId))
+            // Generate report items with optimized mapping
+            var items = enrollmentData.Select(data => new EnrollmentReportItemDto
             {
-                query = query.Where(e => e.Course.InstructorId == request.InstructorId);
-            }
-
-            if (request.Status.HasValue)
-                query = query.Where(e => e.Status == request.Status.Value);
-
-            if (request.StartDate.HasValue)
-                query = query.Where(e => e.EnrollmentDate >= request.StartDate.Value);
-
-            if (request.EndDate.HasValue)
-                query = query.Where(e => e.EnrollmentDate <= request.EndDate.Value);
-
-            if (request.MinGrade.HasValue)
-                query = query.Where(e => e.Grade >= request.MinGrade.Value);
-
-            if (request.MaxGrade.HasValue)
-                query = query.Where(e => e.Grade <= request.MaxGrade.Value);
-
-            if (!string.IsNullOrEmpty(request.Search))
-            {
-                var searchLower = request.Search.ToLower();
-                query = query.Where(e => 
-                    e.Student.User.FirstName.ToLower().Contains(searchLower) ||
-                    e.Student.User.LastName.ToLower().Contains(searchLower) ||
-                    e.Student.User.Email.ToLower().Contains(searchLower) ||
-                    e.Course.Title.ToLower().Contains(searchLower) ||
-                    e.Course.CourseCode.ToLower().Contains(searchLower));
-            }
-
-            var enrollments = await query.ToListAsync();
-
-            // Generate report items
-            var items = enrollments.Select(e => new EnrollmentReportItemDto
-            {
-                EnrollmentId = e.Id,
-                StudentId = e.Student.User.Id,
-                StudentName = e.Student.User.FullName ?? $"{e.Student.User.FirstName} {e.Student.User.LastName}",
-                StudentEmail = e.Student.User.Email ?? string.Empty,
-                StudentNumber = e.Student.StudentNumber,
-                CourseId = e.CourseId,
-                CourseCode = e.Course.CourseCode ?? string.Empty,
-                CourseTitle = e.Course.Title ?? string.Empty,
-                InstructorId = e.Course.InstructorId ?? string.Empty,
-                InstructorName = e.Course.Instructor?.FullName ?? "No Instructor",
-                EnrollmentDate = e.EnrollmentDate,
-                Status = e.Status,
-                Grade = e.Grade,
-                CompletionDate = e.CompletionDate,
-                CreatedAt = e.CreatedAt,
-                UpdatedAt = e.UpdatedAt
+                EnrollmentId = data.Enrollment.Id,
+                StudentId = data.StudentUser.Id,
+                StudentName = data.StudentUser.FullName ?? $"{data.StudentUser.FirstName} {data.StudentUser.LastName}",
+                StudentEmail = data.StudentUser.Email ?? string.Empty,
+                StudentNumber = data.Enrollment.Student.StudentNumber,
+                CourseId = data.Enrollment.CourseId,
+                CourseCode = data.Course.CourseCode ?? string.Empty,
+                CourseTitle = data.Course.Title ?? string.Empty,
+                InstructorId = data.Course.InstructorId ?? string.Empty,
+                InstructorName = data.Instructor?.FullName ?? "No Instructor",
+                EnrollmentDate = data.Enrollment.EnrollmentDate,
+                Status = data.Enrollment.Status,
+                Grade = data.Enrollment.Grade,
+                CompletionDate = data.Enrollment.CompletionDate,
+                CreatedAt = data.Enrollment.CreatedAt,
+                UpdatedAt = data.Enrollment.UpdatedAt
             }).ToList();
 
-            // Generate summary
-            var grades = enrollments.Where(e => e.Grade.HasValue).Select(e => e.Grade!.Value).ToList();
+            // Generate summary with proper collections
+            var grades = items.Where(e => e.Grade.HasValue).Select(e => e.Grade!.Value).ToList();
             var summary = new EnrollmentReportSummaryDto
             {
-                TotalEnrollments = enrollments.Count,
-                ActiveEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Active),
-                CompletedEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Completed),
-                DroppedEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Dropped),
-                SuspendedEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Suspended),
+                TotalEnrollments = items.Count,
+                ActiveEnrollments = items.Count(e => e.Status == EnrollmentStatus.Active),
+                CompletedEnrollments = items.Count(e => e.Status == EnrollmentStatus.Completed),
+                DroppedEnrollments = items.Count(e => e.Status == EnrollmentStatus.Dropped),
+                SuspendedEnrollments = items.Count(e => e.Status == EnrollmentStatus.Suspended),
                 AverageGrade = grades.Any() ? grades.Average() : null,
                 HighestGrade = grades.Any() ? grades.Max() : null,
                 LowestGrade = grades.Any() ? grades.Min() : null,
-                UniqueCourses = enrollments.Select(e => e.CourseId).Distinct().Count(),
-                UniqueStudents = enrollments.Select(e => e.StudentId).Distinct().Count(),
-                UniqueInstructors = enrollments.Where(e => !string.IsNullOrEmpty(e.Course.InstructorId))
-                    .Select(e => e.Course.InstructorId).Distinct().Count()
+                UniqueCourses = items.Select(e => e.CourseId).Distinct().Count(),
+                UniqueStudents = items.Select(e => e.StudentId).Distinct().Count(),
+                UniqueInstructors = items.Where(e => !string.IsNullOrEmpty(e.InstructorId))
+                    .Select(e => e.InstructorId).Distinct().Count()
             };
 
             // Generate groups based on GroupBy parameter
@@ -504,4 +503,158 @@ public class EnrollmentService : IEnrollmentService
 
         return string.Join(" ", parts);
     }
+
+    /// <summary>
+    /// Validates the enrollment report request parameters
+    /// </summary>
+    private bool ValidateReportRequest(EnrollmentReportRequestDto request, out List<string> errors)
+    {
+        errors = new List<string>();
+
+        // Date range validation
+        if (request.StartDate.HasValue && request.EndDate.HasValue)
+        {
+            if (request.StartDate.Value > request.EndDate.Value)
+            {
+                errors.Add("Start date cannot be after end date");
+            }
+            
+            if (request.StartDate.Value > DateTime.UtcNow)
+            {
+                errors.Add("Start date cannot be in the future");
+            }
+        }
+
+        // Grade range validation
+        if (request.MinGrade.HasValue && request.MaxGrade.HasValue)
+        {
+            if (request.MinGrade.Value > request.MaxGrade.Value)
+            {
+                errors.Add("Minimum grade cannot be greater than maximum grade");
+            }
+        }
+
+        // Grade bounds validation
+        if (request.MinGrade.HasValue && (request.MinGrade.Value < 0 || request.MinGrade.Value > 100))
+        {
+            errors.Add("Minimum grade must be between 0 and 100");
+        }
+
+        if (request.MaxGrade.HasValue && (request.MaxGrade.Value < 0 || request.MaxGrade.Value > 100))
+        {
+            errors.Add("Maximum grade must be between 0 and 100");
+        }
+
+        // GUID validation for IDs
+        if (!string.IsNullOrEmpty(request.StudentId) && !Guid.TryParse(request.StudentId, out _))
+        {
+            errors.Add("StudentId must be a valid GUID");
+        }
+
+        if (!string.IsNullOrEmpty(request.InstructorId) && !Guid.TryParse(request.InstructorId, out _))
+        {
+            errors.Add("InstructorId must be a valid GUID");
+        }
+
+        if (request.CourseId.HasValue && request.CourseId.Value == Guid.Empty)
+        {
+            errors.Add("CourseId cannot be empty GUID");
+        }
+
+
+        return !errors.Any();
+    }
+
+    /// <summary>
+    /// Applies filters to the enrollment query with optimized predicates
+    /// </summary>
+    private IQueryable<Enrollment> ApplyFilters(IQueryable<Enrollment> query, EnrollmentReportRequestDto request)
+    {
+        // Course filter
+        if (request.CourseId.HasValue)
+        {
+            query = query.Where(e => e.CourseId == request.CourseId.Value);
+        }
+
+        // Student filter
+        if (!string.IsNullOrEmpty(request.StudentId) && Guid.TryParse(request.StudentId, out var studentGuid))
+        {
+            query = query.Where(e => e.StudentId == studentGuid);
+        }
+
+        // Instructor filter
+        if (!string.IsNullOrEmpty(request.InstructorId) && Guid.TryParse(request.InstructorId, out var instructorGuid))
+        {
+            query = query.Where(e => e.Course.InstructorId == instructorGuid.ToString());
+        }
+
+        // Status filter
+        if (request.Status.HasValue)
+        {
+            query = query.Where(e => e.Status == request.Status.Value);
+        }
+
+        // Date range filters
+        if (request.StartDate.HasValue)
+        {
+            var startDate = request.StartDate.Value.Date;
+            query = query.Where(e => e.EnrollmentDate.Date >= startDate);
+        }
+
+        if (request.EndDate.HasValue)
+        {
+            var endDate = request.EndDate.Value.Date.AddDays(1); // Include end date
+            query = query.Where(e => e.EnrollmentDate.Date < endDate);
+        }
+
+        // Grade range filters
+        if (request.MinGrade.HasValue)
+        {
+            query = query.Where(e => e.Grade.HasValue && e.Grade.Value >= request.MinGrade.Value);
+        }
+
+        if (request.MaxGrade.HasValue)
+        {
+            query = query.Where(e => e.Grade.HasValue && e.Grade.Value <= request.MaxGrade.Value);
+        }
+
+
+        // Add includes for related data
+        query = query.Include(e => e.Student)
+                     .ThenInclude(s => s.User)
+                     .Include(e => e.Course)
+                     .ThenInclude(c => c.Instructor);
+
+        return query;
+    }
+
+    /// <summary>
+    /// Creates an empty report response when no data is found
+    /// </summary>
+    private EnrollmentReportResponseDto CreateEmptyReport(EnrollmentReportRequestDto request)
+    {
+        return new EnrollmentReportResponseDto
+        {
+            Title = GenerateReportTitle(request),
+            GeneratedAt = DateTime.UtcNow,
+            Parameters = request,
+            Summary = new EnrollmentReportSummaryDto
+            {
+                TotalEnrollments = 0,
+                ActiveEnrollments = 0,
+                CompletedEnrollments = 0,
+                DroppedEnrollments = 0,
+                SuspendedEnrollments = 0,
+                AverageGrade = null,
+                HighestGrade = null,
+                LowestGrade = null,
+                UniqueCourses = 0,
+                UniqueStudents = 0,
+                UniqueInstructors = 0
+            },
+            Groups = new List<EnrollmentReportGroupDto>(),
+            Items = new List<EnrollmentReportItemDto>()
+        };
+    }
+
 }

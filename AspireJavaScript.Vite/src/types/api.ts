@@ -719,7 +719,6 @@ export interface components {
             minGrade?: number | null;
             /** Format: double */
             maxGrade?: number | null;
-            search?: string | null;
             format?: components["schemas"]["ReportFormat"];
             groupBy?: components["schemas"]["ReportGroupBy"];
         };

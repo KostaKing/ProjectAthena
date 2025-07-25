@@ -12,7 +12,6 @@ public record EnrollmentReportRequestDto
     public DateTime? EndDate { get; init; }
     public decimal? MinGrade { get; init; }
     public decimal? MaxGrade { get; init; }
-    public string? Search { get; init; }
     public ReportFormat Format { get; init; } = ReportFormat.Json;
     public ReportGroupBy GroupBy { get; init; } = ReportGroupBy.Course;
 }

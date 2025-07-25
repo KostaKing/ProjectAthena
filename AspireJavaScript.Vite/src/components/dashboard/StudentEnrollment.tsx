@@ -1,13 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
+import { Alert, AlertDescription } from '../ui/alert';
 import { enrollmentApi, type CreateEnrollmentDto } from '../../services/enrollmentApi';
 import { studentApi, type StudentDto } from '../../services/studentApi';
 import { type CourseDto } from '../../services/courseApi';
 import { toast } from 'sonner';
-import { ArrowLeft, UserPlus, Search, Users, BookOpen } from 'lucide-react';
+import { ArrowLeft, UserPlus, Search, Users, BookOpen, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { 
+  studentEnrollmentSchema, 
+  type StudentEnrollmentFormData,
+  validateEnrollmentCapacity,
+  validateStudentEligibility,
+  sanitizeSearchInput
+} from '../../lib/validations/student-enrollment';
 
 interface StudentEnrollmentProps {
   courses: CourseDto[];
@@ -17,10 +27,20 @@ interface StudentEnrollmentProps {
 export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) {
   const [students, setStudents] = useState<StudentDto[]>([]);
   const [loading, setLoading] = useState(false);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<CourseDto | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [enrolledStudents, setEnrolledStudents] = useState<Set<string>>(new Set());
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Form setup with validation
+  const form = useForm<StudentEnrollmentFormData>({
+    resolver: zodResolver(studentEnrollmentSchema),
+    defaultValues: {
+      studentIds: []
+    }
+  });
 
   useEffect(() => {
     fetchStudents();
@@ -60,58 +80,156 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
     }
   };
 
-  const handleStudentToggle = (studentId: string) => {
-    if (enrolledStudents.has(studentId)) return; // Prevent selecting already enrolled students
+  const handleStudentToggle = useCallback((studentId: string) => {
+    // Validate student eligibility
+    const eligibilityError = validateStudentEligibility(studentId, enrolledStudents);
+    if (eligibilityError) {
+      toast.error(eligibilityError);
+      return;
+    }
     
     const newSelected = new Set(selectedStudents);
     if (newSelected.has(studentId)) {
       newSelected.delete(studentId);
     } else {
+      // Check enrollment capacity before adding
+      if (selectedCourse) {
+        const capacityError = validateEnrollmentCapacity(
+          newSelected.size + 1,
+          selectedCourse.currentEnrollments || 0,
+          selectedCourse.maxEnrollments || 0
+        );
+        if (capacityError) {
+          toast.error(capacityError);
+          return;
+        }
+      }
       newSelected.add(studentId);
     }
+    
     setSelectedStudents(newSelected);
-  };
+    form.setValue('studentIds', Array.from(newSelected));
+    setValidationErrors([]);
+  }, [selectedStudents, enrolledStudents, selectedCourse, form]);
 
-  const handleEnrollStudents = async () => {
-    if (!selectedCourse || selectedStudents.size === 0) {
-      toast.error('Please select a course and at least one student');
-      return;
-    }
-
+  const handleEnrollStudents = async (data: StudentEnrollmentFormData) => {
     try {
-      setLoading(true);
-      const enrollmentPromises = Array.from(selectedStudents).map(studentId => {
-        const enrollmentData: CreateEnrollmentDto = {
-          studentId,
-          courseId: selectedCourse.id!,
-        };
-        return enrollmentApi.createEnrollment(enrollmentData);
-      });
-
-      await Promise.all(enrollmentPromises);
-      toast.success(`Successfully enrolled ${selectedStudents.size} student(s) in ${selectedCourse.title}`);
+      setEnrollmentLoading(true);
+      setValidationErrors([]);
       
-      // Refresh enrolled students list and clear selections
+      // Additional validation
+      const errors: string[] = [];
+      
+      if (!selectedCourse) {
+        errors.push('Please select a course');
+      }
+      
+      if (data.studentIds.length === 0) {
+        errors.push('Please select at least one student');
+      }
+      
+      // Validate enrollment capacity
+      if (selectedCourse) {
+        const capacityError = validateEnrollmentCapacity(
+          data.studentIds.length,
+          selectedCourse.currentEnrollments || 0,
+          selectedCourse.maxEnrollments || 0
+        );
+        if (capacityError) {
+          errors.push(capacityError);
+        }
+      }
+      
+      // Validate student eligibility
+      for (const studentId of data.studentIds) {
+        const eligibilityError = validateStudentEligibility(studentId, enrolledStudents);
+        if (eligibilityError) {
+          const student = students.find(s => s.id === studentId);
+          errors.push(`${student?.fullName || 'Student'}: Already enrolled`);
+        }
+      }
+      
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
+      
+      // Perform enrollments with error handling for individual failures
+      const enrollmentResults = await Promise.allSettled(
+        data.studentIds.map(async (studentId) => {
+          const enrollmentData: CreateEnrollmentDto = {
+            studentId,
+            courseId: selectedCourse!.id!,
+          };
+          return enrollmentApi.createEnrollment(enrollmentData);
+        })
+      );
+      
+      // Analyze results
+      const successful = enrollmentResults.filter(result => result.status === 'fulfilled').length;
+      const failed = enrollmentResults.filter(result => result.status === 'rejected').length;
+      
+      if (successful > 0) {
+        toast.success(`Successfully enrolled ${successful} student(s) in ${selectedCourse!.title}`);
+      }
+      
+      if (failed > 0) {
+        toast.error(`Failed to enroll ${failed} student(s). Please check for duplicates or capacity issues.`);
+        console.error('Enrollment failures:', enrollmentResults.filter(r => r.status === 'rejected'));
+      }
+      
+      // Refresh data and clear selections
       if (selectedCourse?.id) {
         await fetchEnrolledStudents(selectedCourse.id);
       }
       setSelectedStudents(new Set());
+      form.reset({ studentIds: [] });
+      
     } catch (error) {
-      toast.error('Failed to enroll students');
+      toast.error('Failed to process enrollments');
       console.error('Error enrolling students:', error);
     } finally {
-      setLoading(false);
+      setEnrollmentLoading(false);
     }
   };
 
-  const filteredStudents = students.filter(student =>
-    student.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = students.filter(student => {
+    if (!searchTerm.trim()) return true;
+    
+    const sanitizedTerm = sanitizeSearchInput(searchTerm).toLowerCase();
+    return (
+      student.fullName?.toLowerCase().includes(sanitizedTerm) ||
+      student.email?.toLowerCase().includes(sanitizedTerm) ||
+      student.studentNumber?.toLowerCase().includes(sanitizedTerm)
+    );
+  });
 
-  const availableCourses = courses.filter(course => 
-    (course.currentEnrollments || 0) < (course.maxEnrollments || 0)
-  );
+  const availableCourses = courses.filter(course => {
+    if (!course.isActive) return false;
+    const current = course.currentEnrollments || 0;
+    const max = course.maxEnrollments || 0;
+    return current < max && max > 0;
+  });
+  
+  // Update course selection validation
+  useEffect(() => {
+    if (selectedCourse) {
+      form.setValue('courseId', selectedCourse.id!);
+      
+      // Clear student selections if course capacity is exceeded
+      const capacityError = validateEnrollmentCapacity(
+        selectedStudents.size,
+        selectedCourse.currentEnrollments || 0,
+        selectedCourse.maxEnrollments || 0
+      );
+      
+      if (capacityError) {
+        setSelectedStudents(new Set());
+        form.setValue('studentIds', []);
+        setValidationErrors([capacityError]);
+      }
+    }
+  }, [selectedCourse, selectedStudents.size, form]);
 
   return (
     <div className="space-y-6">
@@ -188,16 +306,17 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search students..."
+                placeholder="Search students by name, email, or student number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
+                maxLength={100}
               />
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : filteredStudents.length === 0 ? (
               <div className="text-center py-8">
@@ -244,20 +363,43 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
         </Card>
       </div>
 
+      {/* Validation Errors */}
+      {validationErrors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Action Panel */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold">Enrollment Summary</h3>
+            <div className="space-y-1">
+              <h3 className="font-semibold flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                Enrollment Summary
+              </h3>
               <p className="text-sm text-muted-foreground">
                 {selectedCourse ? (
-                  <>Course: <strong>{selectedCourse.title}</strong></>
+                  <>Course: <strong>{selectedCourse.title}</strong> ({selectedCourse.courseCode})</>
                 ) : (
                   'No course selected'
                 )}
-                {' • '}
+              </p>
+              <p className="text-sm text-muted-foreground">
                 {selectedStudents.size} student(s) selected
+                {selectedCourse && (
+                  <span className="ml-2 text-xs">
+                    • {(selectedCourse.maxEnrollments || 0) - (selectedCourse.currentEnrollments || 0)} spots available
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex gap-2">
@@ -265,15 +407,15 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
                 Cancel
               </Button>
               <Button
-                onClick={handleEnrollStudents}
-                disabled={!selectedCourse || selectedStudents.size === 0 || loading}
+                onClick={form.handleSubmit(handleEnrollStudents)}
+                disabled={!selectedCourse || selectedStudents.size === 0 || enrollmentLoading || validationErrors.length > 0}
               >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                {enrollmentLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <UserPlus className="mr-2 h-4 w-4" />
                 )}
-                Enroll Students
+                Enroll {selectedStudents.size} Student{selectedStudents.size !== 1 ? 's' : ''}
               </Button>
             </div>
           </div>

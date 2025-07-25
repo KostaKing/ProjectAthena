@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
-// Note: Using basic HTML elements instead of missing UI components
-// import { Separator } from '../ui/separator';
-// import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { DateRangePicker } from '../ui/date-picker';
+import { Alert, AlertDescription } from '../ui/alert';
 import { 
   enrollmentApi, 
   type EnrollmentReportRequestDto, 
@@ -19,6 +20,12 @@ import {
 import { courseApi, type CourseDto } from '../../services/courseApi';
 import { studentApi, type StudentDto } from '../../services/studentApi';
 import { toast } from 'sonner';
+import { 
+  enrollmentReportSchema, 
+  type EnrollmentReportFormData,
+  validateDateRange,
+  validateGradeRange 
+} from '../../lib/validations/enrollment-report';
 import { 
   ArrowLeft, 
   Download, 
@@ -32,8 +39,7 @@ import {
   FileText,
   BarChart3,
   PieChart,
-  Loader2,
-  Search
+  Loader2
 } from 'lucide-react';
 
 interface AdvancedEnrollmentReportProps {
@@ -46,11 +52,15 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [students, setStudents] = useState<StudentDto[]>([]);
   const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  // Filter state
-  const [filters, setFilters] = useState<EnrollmentReportRequestDto>({
-    groupBy: ReportGroupBy.Course,
-    format: ReportFormat.Json
+  // Form setup with validation
+  const form = useForm<EnrollmentReportFormData>({
+    resolver: zodResolver(enrollmentReportSchema) as any,
+    defaultValues: {
+      groupBy: ReportGroupBy.Course,
+      format: ReportFormat.Json
+    }
   });
 
   useEffect(() => {
@@ -70,16 +80,65 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
     }
   };
 
-  const handleFilterChange = (key: keyof EnrollmentReportRequestDto, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const handleFilterChange = (key: keyof EnrollmentReportFormData, value: any) => {
+    form.setValue(key as any, value);
+    setValidationErrors([]);
+    
+    // Real-time validation for date and grade ranges
+    const currentValues = form.getValues();
+    if (key === 'startDate' || key === 'endDate') {
+      const dateError = validateDateRange(
+        key === 'startDate' ? value : currentValues.startDate,
+        key === 'endDate' ? value : currentValues.endDate
+      );
+      if (dateError) {
+        setValidationErrors([dateError]);
+      }
+    }
+    
+    if (key === 'minGrade' || key === 'maxGrade') {
+      const gradeError = validateGradeRange(
+        key === 'minGrade' ? value : currentValues.minGrade,
+        key === 'maxGrade' ? value : currentValues.maxGrade
+      );
+      if (gradeError) {
+        setValidationErrors([gradeError]);
+      }
+    }
   };
 
-  const generateReport = async () => {
+  const generateReport = async (data: EnrollmentReportFormData) => {
     try {
       setLoading(true);
-      const reportData = await enrollmentApi.generateAdvancedEnrollmentReport(filters);
+      setValidationErrors([]);
+      
+      // Additional validation
+      const dateError = validateDateRange(data.startDate, data.endDate);
+      const gradeError = validateGradeRange(data.minGrade, data.maxGrade);
+      
+      const errors: string[] = [];
+      if (dateError) errors.push(dateError);
+      if (gradeError) errors.push(gradeError);
+      
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
+      
+      // Transform form data to API request format
+      const requestData: EnrollmentReportRequestDto = {
+        ...data,
+        courseId: data.courseId === '' ? undefined : data.courseId,
+        studentId: data.studentId === '' ? undefined : data.studentId,
+        instructorId: data.instructorId === '' ? undefined : data.instructorId,
+        startDate: data.startDate?.toISOString(),
+        endDate: data.endDate?.toISOString()
+      };
+      
+      const reportData = await enrollmentApi.generateAdvancedEnrollmentReport(requestData);
       setReport(reportData);
       setFiltersExpanded(false);
+      toast.success('Report generated successfully');
     } catch (error) {
       toast.error('Failed to generate enrollment report');
       console.error('Error generating report:', error);
@@ -89,10 +148,12 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
   };
 
   const clearFilters = () => {
-    setFilters({
+    form.reset({
       groupBy: ReportGroupBy.Course,
       format: ReportFormat.Json
     });
+    setValidationErrors([]);
+    setReport(null);
   };
 
   const exportReport = (format: 'csv' | 'pdf') => {
@@ -213,7 +274,7 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
                 {/* Course Filter */}
                 <div className="space-y-2">
                   <Label htmlFor="course">Course</Label>
-                  <Select value={filters.courseId || 'all'} onValueChange={(value) => handleFilterChange('courseId', value === 'all' ? undefined : value)}>
+                  <Select value={form.watch('courseId') || 'all'} onValueChange={(value) => handleFilterChange('courseId', value === 'all' ? '' : value)}>
                     <SelectTrigger id="course">
                       <SelectValue placeholder="All courses" />
                     </SelectTrigger>
@@ -231,7 +292,7 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
                 {/* Student Filter */}
                 <div className="space-y-2">
                   <Label htmlFor="student">Student</Label>
-                  <Select value={filters.studentId || 'all'} onValueChange={(value) => handleFilterChange('studentId', value === 'all' ? undefined : value)}>
+                  <Select value={form.watch('studentId') || 'all'} onValueChange={(value) => handleFilterChange('studentId', value === 'all' ? '' : value)}>
                     <SelectTrigger id="student">
                       <SelectValue placeholder="All students" />
                     </SelectTrigger>
@@ -249,7 +310,7 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
                 {/* Status Filter */}
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select value={filters.status?.toString() || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : parseInt(value))}>
+                  <Select value={form.watch('status')?.toString() || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : parseInt(value) as EnrollmentStatus)}>
                     <SelectTrigger id="status">
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
@@ -263,32 +324,55 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
                   </Select>
                 </div>
 
-                {/* Start Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={filters.startDate?.split('T')[0] || ''}
-                    onChange={(e) => handleFilterChange('startDate', e.target.value ? `${e.target.value}T00:00:00.000Z` : undefined)}
+                {/* Date Range */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Date Range</Label>
+                  <DateRangePicker
+                    startDate={form.watch('startDate')}
+                    endDate={form.watch('endDate')}
+                    onStartDateChange={(date) => handleFilterChange('startDate', date)}
+                    onEndDateChange={(date) => handleFilterChange('endDate', date)}
+                    startPlaceholder="Start date (optional)"
+                    endPlaceholder="End date (optional)"
+                    className="w-full"
                   />
                 </div>
 
-                {/* End Date */}
+                {/* Min Grade */}
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="minGrade">Min Grade</Label>
                   <Input
-                    id="endDate"
-                    type="date"
-                    value={filters.endDate?.split('T')[0] || ''}
-                    onChange={(e) => handleFilterChange('endDate', e.target.value ? `${e.target.value}T23:59:59.999Z` : undefined)}
+                    id="minGrade"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="0-100"
+                    value={form.watch('minGrade') || ''}
+                    onChange={(e) => handleFilterChange('minGrade', e.target.value ? parseFloat(e.target.value) : undefined)}
                   />
                 </div>
+
+                {/* Max Grade */}
+                <div className="space-y-2">
+                  <Label htmlFor="maxGrade">Max Grade</Label>
+                  <Input
+                    id="maxGrade"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="0-100"
+                    value={form.watch('maxGrade') || ''}
+                    onChange={(e) => handleFilterChange('maxGrade', e.target.value ? parseFloat(e.target.value) : undefined)}
+                  />
+                </div>
+
 
                 {/* Group By */}
                 <div className="space-y-2">
                   <Label htmlFor="groupBy">Group By</Label>
-                  <Select value={filters.groupBy?.toString()} onValueChange={(value) => handleFilterChange('groupBy', parseInt(value))}>
+                  <Select value={form.watch('groupBy')?.toString()} onValueChange={(value) => handleFilterChange('groupBy', parseInt(value) as ReportGroupBy)}>
                     <SelectTrigger id="groupBy">
                       <SelectValue />
                     </SelectTrigger>
@@ -313,7 +397,7 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
                       placeholder="Min grade"
                       min="0"
                       max="100"
-                      value={filters.minGrade || ''}
+                      value={form.watch('minGrade') || ''}
                       onChange={(e) => handleFilterChange('minGrade', e.target.value ? parseFloat(e.target.value) : undefined)}
                     />
                     <Input
@@ -321,27 +405,26 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
                       placeholder="Max grade"
                       min="0"
                       max="100"
-                      value={filters.maxGrade || ''}
+                      value={form.watch('maxGrade') || ''}
                       onChange={(e) => handleFilterChange('maxGrade', e.target.value ? parseFloat(e.target.value) : undefined)}
                     />
                   </div>
                 </div>
 
-                {/* Search */}
-                <div className="space-y-2">
-                  <Label htmlFor="search">Search</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="search"
-                      placeholder="Search students, courses..."
-                      value={filters.search || ''}
-                      onChange={(e) => handleFilterChange('search', e.target.value || undefined)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
               </div>
+
+              {/* Validation Errors */}
+              {validationErrors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    <ul className="list-disc list-inside space-y-1">
+                      {validationErrors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <hr className="border-border" />
 
@@ -349,7 +432,10 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
                 <Button variant="outline" onClick={clearFilters}>
                   Clear Filters
                 </Button>
-                <Button onClick={generateReport} disabled={loading}>
+                <Button 
+                  onClick={() => form.handleSubmit(generateReport)()} 
+                  disabled={loading || validationErrors.length > 0}
+                >
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -375,7 +461,7 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {getGroupByIcon(filters.groupBy!)}
+                {getGroupByIcon(form.getValues('groupBy') || ReportGroupBy.Course)}
                 {report.title}
               </CardTitle>
               <CardDescription>
@@ -445,7 +531,7 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
           {report.groups.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Results by {ReportGroupBy[filters.groupBy!]}</CardTitle>
+                <CardTitle>Results by {ReportGroupBy[form.getValues('groupBy') || ReportGroupBy.Course]}</CardTitle>
                 <CardDescription>
                   Data organized by the selected grouping criteria
                 </CardDescription>
