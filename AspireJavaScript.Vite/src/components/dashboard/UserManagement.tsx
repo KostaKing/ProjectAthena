@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
 import { 
   Users, 
-  UserPlus, 
   Search, 
   Edit, 
   Mail,
@@ -23,7 +22,8 @@ import {
   Shield,
   User,
   MoreHorizontal,
-  ArrowUpDown
+  ArrowUpDown,
+  Trash2
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
@@ -78,6 +78,17 @@ export function UserManagement() {
     } catch (error) {
       toast.error('Failed to deactivate user');
       console.error('Error deactivating user:', error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await authApi.deleteUser(userId);
+      toast.success('User deleted successfully');
+      await fetchUsers(); // Refresh the user list
+    } catch (error) {
+      toast.error('Failed to delete user');
+      console.error('Error deleting user:', error);
     }
   };
 
@@ -138,12 +149,13 @@ export function UserManagement() {
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     user: UserDto | null;
-    action: 'activate' | 'deactivate';
+    action: 'activate' | 'deactivate' | 'delete';
   }>({ open: false, user: null, action: 'activate' });
 
   const userColumns: ColumnDef<UserDto>[] = useMemo(() => [
     {
-      id: "user",
+      accessorKey: "fullName",
+      id: "fullName",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -269,6 +281,17 @@ export function UserManagement() {
                   </>
                 )}
               </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => setConfirmDialog({
+                  open: true,
+                  user,
+                  action: 'delete'
+                })}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete User
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -322,10 +345,6 @@ export function UserManagement() {
             Manage all users in your system
           </p>
         </div>
-        <Button className="shrink-0">
-          <UserPlus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -521,11 +540,16 @@ export function UserManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {confirmDialog.action === 'activate' ? 'Activate User' : 'Deactivate User'}
+              {confirmDialog.action === 'activate' 
+                ? 'Activate User' 
+                : confirmDialog.action === 'deactivate' 
+                  ? 'Deactivate User' 
+                  : 'Delete User'}
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to {confirmDialog.action} {confirmDialog.user?.fullName || confirmDialog.user?.firstName}?
               {confirmDialog.action === 'deactivate' && ' This will revoke their access to the system.'}
+              {confirmDialog.action === 'delete' && ' This action cannot be undone and will permanently remove the user from the system.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -536,19 +560,25 @@ export function UserManagement() {
               Cancel
             </Button>
             <Button 
-              variant={confirmDialog.action === 'deactivate' ? 'destructive' : 'default'}
+              variant={confirmDialog.action === 'deactivate' || confirmDialog.action === 'delete' ? 'destructive' : 'default'}
               onClick={async () => {
                 if (confirmDialog.user) {
                   if (confirmDialog.action === 'activate') {
                     await handleActivateUser(confirmDialog.user.id!);
-                  } else {
+                  } else if (confirmDialog.action === 'deactivate') {
                     await handleDeactivateUser(confirmDialog.user.id!);
+                  } else if (confirmDialog.action === 'delete') {
+                    await handleDeleteUser(confirmDialog.user.id!);
                   }
                 }
                 setConfirmDialog({ open: false, user: null, action: 'activate' });
               }}
             >
-              {confirmDialog.action === 'activate' ? 'Activate' : 'Deactivate'}
+              {confirmDialog.action === 'activate' 
+                ? 'Activate' 
+                : confirmDialog.action === 'deactivate' 
+                  ? 'Deactivate' 
+                  : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
