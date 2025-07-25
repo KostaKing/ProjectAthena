@@ -14,5 +14,6 @@ public interface IEnrollmentService
     Task<bool> UpdateEnrollmentStatusAsync(Guid id, EnrollmentStatus status, decimal? grade = null);
     Task<bool> DeleteEnrollmentAsync(Guid id);
     Task<EnrollmentReportDto?> GenerateEnrollmentReportAsync(Guid courseId);
+    Task<EnrollmentReportResponseDto> GenerateAdvancedEnrollmentReportAsync(EnrollmentReportRequestDto request);
     Task<bool> IsStudentEnrolledAsync(string studentId, Guid courseId);
 }

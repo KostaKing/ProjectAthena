@@ -24,6 +24,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/auth/users/{userId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activate user
+         * @description Activate a user account (Admin only)
+         */
+        post: operations["ActivateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/auth/users/{userId}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deactivate user
+         * @description Deactivate a user account (Admin only)
+         */
+        post: operations["DeactivateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -313,6 +353,23 @@ export interface paths {
         get: operations["GenerateEnrollmentReport"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enrollments/reports/advanced": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate advanced enrollment report with filters */
+        post: operations["GenerateAdvancedEnrollmentReport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -614,6 +671,91 @@ export interface components {
             endDate?: string;
             studentEnrollments?: components["schemas"]["EnrollmentSummaryDto"][] | null;
         };
+        EnrollmentReportGroupDto: {
+            groupKey?: string | null;
+            groupLabel?: string | null;
+            /** Format: int32 */
+            count?: number;
+            /** Format: double */
+            averageGrade?: number | null;
+            items?: components["schemas"]["EnrollmentReportItemDto"][] | null;
+        };
+        EnrollmentReportItemDto: {
+            /** Format: uuid */
+            enrollmentId?: string;
+            studentId?: string | null;
+            studentName?: string | null;
+            studentEmail?: string | null;
+            studentNumber?: string | null;
+            /** Format: uuid */
+            courseId?: string;
+            courseCode?: string | null;
+            courseTitle?: string | null;
+            instructorId?: string | null;
+            instructorName?: string | null;
+            /** Format: date-time */
+            enrollmentDate?: string;
+            status?: components["schemas"]["EnrollmentStatus"];
+            /** Format: double */
+            grade?: number | null;
+            /** Format: date-time */
+            completionDate?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        EnrollmentReportRequestDto: {
+            /** Format: uuid */
+            courseId?: string | null;
+            studentId?: string | null;
+            instructorId?: string | null;
+            status?: components["schemas"]["EnrollmentStatus"];
+            /** Format: date-time */
+            startDate?: string | null;
+            /** Format: date-time */
+            endDate?: string | null;
+            /** Format: double */
+            minGrade?: number | null;
+            /** Format: double */
+            maxGrade?: number | null;
+            search?: string | null;
+            format?: components["schemas"]["ReportFormat"];
+            groupBy?: components["schemas"]["ReportGroupBy"];
+        };
+        EnrollmentReportResponseDto: {
+            title?: string | null;
+            /** Format: date-time */
+            generatedAt?: string;
+            parameters?: components["schemas"]["EnrollmentReportRequestDto"];
+            summary?: components["schemas"]["EnrollmentReportSummaryDto"];
+            groups?: components["schemas"]["EnrollmentReportGroupDto"][] | null;
+            items?: components["schemas"]["EnrollmentReportItemDto"][] | null;
+        };
+        EnrollmentReportSummaryDto: {
+            /** Format: int32 */
+            totalEnrollments?: number;
+            /** Format: int32 */
+            activeEnrollments?: number;
+            /** Format: int32 */
+            completedEnrollments?: number;
+            /** Format: int32 */
+            droppedEnrollments?: number;
+            /** Format: int32 */
+            suspendedEnrollments?: number;
+            /** Format: double */
+            averageGrade?: number | null;
+            /** Format: double */
+            highestGrade?: number | null;
+            /** Format: double */
+            lowestGrade?: number | null;
+            /** Format: int32 */
+            uniqueCourses?: number;
+            /** Format: int32 */
+            uniqueStudents?: number;
+            /** Format: int32 */
+            uniqueInstructors?: number;
+        };
         /**
          * Format: int32
          * @enum {integer}
@@ -675,6 +817,16 @@ export interface components {
             confirmPassword: string | null;
             role?: components["schemas"]["UserRole"];
         };
+        /**
+         * Format: int32
+         * @enum {integer}
+         */
+        ReportFormat: ReportFormat;
+        /**
+         * Format: int32
+         * @enum {integer}
+         */
+        ReportGroupBy: ReportGroupBy;
         StudentDto: {
             /** Format: uuid */
             id?: string;
@@ -799,6 +951,92 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserDto"][];
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ActivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {
@@ -1463,6 +1701,37 @@ export interface operations {
             };
         };
     };
+    GenerateAdvancedEnrollmentReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentReportRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentReportResponseDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetAllStudents: {
         parameters: {
             query?: never;
@@ -1915,6 +2184,18 @@ export enum EnrollmentStatus {
     Value2 = 2,
     Value3 = 3,
     Value4 = 4
+}
+export enum ReportFormat {
+    Value1 = 1,
+    Value2 = 2,
+    Value3 = 3
+}
+export enum ReportGroupBy {
+    Value1 = 1,
+    Value2 = 2,
+    Value3 = 3,
+    Value4 = 4,
+    Value5 = 5
 }
 export enum UserRole {
     Value1 = 1,

@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { StudentEnrollment } from './StudentEnrollment';
 import { EnrollmentReport } from './EnrollmentReport';
+import { AdvancedEnrollmentReport } from './AdvancedEnrollmentReport';
 import { enrollmentApi, type EnrollmentDto, EnrollmentStatus, type PagedResult } from '../../services/enrollmentApi';
 
 // Ensure we have the correct enum values matching the backend
@@ -29,6 +30,7 @@ export function EnrollmentManagement() {
   const [pageSize] = useState(10);
   const [showStudentForm, setShowStudentForm] = useState(false);
   const [selectedCourseForReport, setSelectedCourseForReport] = useState<string | null>(null);
+  const [showAdvancedReport, setShowAdvancedReport] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -133,6 +135,17 @@ export function EnrollmentManagement() {
     );
   }
 
+  if (showAdvancedReport) {
+    return (
+      <AdvancedEnrollmentReport
+        onClose={() => {
+          setShowAdvancedReport(false);
+          fetchData();
+        }}
+      />
+    );
+  }
+
   if (selectedCourseForReport) {
     return (
       <EnrollmentReport
@@ -155,6 +168,10 @@ export function EnrollmentManagement() {
           <Button onClick={() => setShowStudentForm(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Enroll Student
+          </Button>
+          <Button variant="outline" onClick={() => setShowAdvancedReport(true)}>
+            <FileText className="mr-2 h-4 w-4" />
+            Advanced Reports
           </Button>
         </div>
       </div>

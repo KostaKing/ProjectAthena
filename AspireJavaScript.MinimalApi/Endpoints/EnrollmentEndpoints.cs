@@ -67,6 +67,13 @@ public static class EnrollmentEndpoints
             .Produces<EnrollmentReportDto>(200)
             .Produces(404)
             .RequireAuthorization("Teacher");
+
+        group.MapPost("/reports/advanced", GenerateAdvancedEnrollmentReport)
+            .WithName("GenerateAdvancedEnrollmentReport")  
+            .WithSummary("Generate advanced enrollment report with filters")
+            .Produces<EnrollmentReportResponseDto>(200)
+            .Produces(400)
+            .RequireAuthorization("Teacher");
     }
 
     private static async Task<IResult> GetAllEnrollments(
@@ -208,6 +215,22 @@ public static class EnrollmentEndpoints
         {
             return Results.Problem(
                 title: "Error generating enrollment report",
+                detail: ex.Message,
+                statusCode: 500);
+        }
+    }
+
+    private static async Task<IResult> GenerateAdvancedEnrollmentReport(EnrollmentReportRequestDto request, IEnrollmentService enrollmentService)
+    {
+        try
+        {
+            var report = await enrollmentService.GenerateAdvancedEnrollmentReportAsync(request);
+            return Results.Ok(report);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                title: "Error generating advanced enrollment report",
                 detail: ex.Message,
                 statusCode: 500);
         }

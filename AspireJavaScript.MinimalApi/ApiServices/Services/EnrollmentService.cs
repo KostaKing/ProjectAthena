@@ -156,10 +156,19 @@ public class EnrollmentService : IEnrollmentService
                 throw new InvalidOperationException("Course has reached maximum enrollment capacity.");
             }
 
-            var student = await _context.Users.FirstOrDefaultAsync(u => u.Id == createEnrollmentDto.StudentId);
+            var studentId = Guid.Parse(createEnrollmentDto.StudentId);
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.Id == studentId && s.IsActive);
             if (student == null)
             {
                 throw new ArgumentException("Student not found.");
+            }
+
+            // Check for duplicate enrollment
+            var existingEnrollment = await _context.Enrollments
+                .FirstOrDefaultAsync(e => e.StudentId == studentId && e.CourseId == createEnrollmentDto.CourseId && e.IsActive);
+            if (existingEnrollment != null)
+            {
+                throw new InvalidOperationException("Student is already enrolled in this course.");
             }
 
             var enrollment = createEnrollmentDto.ToEntity();
@@ -286,5 +295,213 @@ public class EnrollmentService : IEnrollmentService
                 studentId, courseId);
             throw;
         }
+    }
+
+    public async Task<EnrollmentReportResponseDto> GenerateAdvancedEnrollmentReportAsync(EnrollmentReportRequestDto request)
+    {
+        try
+        {
+            var query = _context.Enrollments
+                .Include(e => e.Student)
+                    .ThenInclude(s => s.User)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Instructor)
+                .Where(e => e.IsActive);
+
+            // Apply filters
+            if (request.CourseId.HasValue)
+                query = query.Where(e => e.CourseId == request.CourseId.Value);
+
+            if (!string.IsNullOrEmpty(request.StudentId))
+            {
+                var studentGuid = Guid.Parse(request.StudentId);
+                query = query.Where(e => e.StudentId == studentGuid);
+            }
+
+            if (!string.IsNullOrEmpty(request.InstructorId))
+            {
+                query = query.Where(e => e.Course.InstructorId == request.InstructorId);
+            }
+
+            if (request.Status.HasValue)
+                query = query.Where(e => e.Status == request.Status.Value);
+
+            if (request.StartDate.HasValue)
+                query = query.Where(e => e.EnrollmentDate >= request.StartDate.Value);
+
+            if (request.EndDate.HasValue)
+                query = query.Where(e => e.EnrollmentDate <= request.EndDate.Value);
+
+            if (request.MinGrade.HasValue)
+                query = query.Where(e => e.Grade >= request.MinGrade.Value);
+
+            if (request.MaxGrade.HasValue)
+                query = query.Where(e => e.Grade <= request.MaxGrade.Value);
+
+            if (!string.IsNullOrEmpty(request.Search))
+            {
+                var searchLower = request.Search.ToLower();
+                query = query.Where(e => 
+                    e.Student.User.FirstName.ToLower().Contains(searchLower) ||
+                    e.Student.User.LastName.ToLower().Contains(searchLower) ||
+                    e.Student.User.Email.ToLower().Contains(searchLower) ||
+                    e.Course.Title.ToLower().Contains(searchLower) ||
+                    e.Course.CourseCode.ToLower().Contains(searchLower));
+            }
+
+            var enrollments = await query.ToListAsync();
+
+            // Generate report items
+            var items = enrollments.Select(e => new EnrollmentReportItemDto
+            {
+                EnrollmentId = e.Id,
+                StudentId = e.Student.User.Id,
+                StudentName = e.Student.User.FullName ?? $"{e.Student.User.FirstName} {e.Student.User.LastName}",
+                StudentEmail = e.Student.User.Email ?? string.Empty,
+                StudentNumber = e.Student.StudentNumber,
+                CourseId = e.CourseId,
+                CourseCode = e.Course.CourseCode ?? string.Empty,
+                CourseTitle = e.Course.Title ?? string.Empty,
+                InstructorId = e.Course.InstructorId ?? string.Empty,
+                InstructorName = e.Course.Instructor?.FullName ?? "No Instructor",
+                EnrollmentDate = e.EnrollmentDate,
+                Status = e.Status,
+                Grade = e.Grade,
+                CompletionDate = e.CompletionDate,
+                CreatedAt = e.CreatedAt,
+                UpdatedAt = e.UpdatedAt
+            }).ToList();
+
+            // Generate summary
+            var grades = enrollments.Where(e => e.Grade.HasValue).Select(e => e.Grade!.Value).ToList();
+            var summary = new EnrollmentReportSummaryDto
+            {
+                TotalEnrollments = enrollments.Count,
+                ActiveEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Active),
+                CompletedEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Completed),
+                DroppedEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Dropped),
+                SuspendedEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Suspended),
+                AverageGrade = grades.Any() ? grades.Average() : null,
+                HighestGrade = grades.Any() ? grades.Max() : null,
+                LowestGrade = grades.Any() ? grades.Min() : null,
+                UniqueCourses = enrollments.Select(e => e.CourseId).Distinct().Count(),
+                UniqueStudents = enrollments.Select(e => e.StudentId).Distinct().Count(),
+                UniqueInstructors = enrollments.Where(e => !string.IsNullOrEmpty(e.Course.InstructorId))
+                    .Select(e => e.Course.InstructorId).Distinct().Count()
+            };
+
+            // Generate groups based on GroupBy parameter
+            var groups = GenerateReportGroups(items, request.GroupBy);
+
+            // Generate title
+            var title = GenerateReportTitle(request);
+
+            return new EnrollmentReportResponseDto
+            {
+                Title = title,
+                GeneratedAt = DateTime.UtcNow,
+                Parameters = request,
+                Summary = summary,
+                Groups = groups,
+                Items = items
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating advanced enrollment report");
+            throw;
+        }
+    }
+
+    private List<EnrollmentReportGroupDto> GenerateReportGroups(List<EnrollmentReportItemDto> items, ReportGroupBy groupBy)
+    {
+        return groupBy switch
+        {
+            ReportGroupBy.Course => items
+                .GroupBy(i => new { i.CourseId, i.CourseCode, i.CourseTitle })
+                .Select(g => new EnrollmentReportGroupDto
+                {
+                    GroupKey = g.Key.CourseId.ToString(),
+                    GroupLabel = $"{g.Key.CourseCode} - {g.Key.CourseTitle}",
+                    Count = g.Count(),
+                    AverageGrade = g.Where(i => i.Grade.HasValue).Any() ? g.Where(i => i.Grade.HasValue).Average(i => i.Grade!.Value) : null,
+                    Items = g.ToList()
+                }).ToList(),
+
+            ReportGroupBy.Student => items
+                .GroupBy(i => new { i.StudentId, i.StudentName, i.StudentEmail })
+                .Select(g => new EnrollmentReportGroupDto
+                {
+                    GroupKey = g.Key.StudentId,
+                    GroupLabel = $"{g.Key.StudentName} ({g.Key.StudentEmail})",
+                    Count = g.Count(),
+                    AverageGrade = g.Where(i => i.Grade.HasValue).Any() ? g.Where(i => i.Grade.HasValue).Average(i => i.Grade!.Value) : null,
+                    Items = g.ToList()
+                }).ToList(),
+
+            ReportGroupBy.Instructor => items
+                .GroupBy(i => new { i.InstructorId, i.InstructorName })
+                .Select(g => new EnrollmentReportGroupDto
+                {
+                    GroupKey = g.Key.InstructorId,
+                    GroupLabel = g.Key.InstructorName,
+                    Count = g.Count(),
+                    AverageGrade = g.Where(i => i.Grade.HasValue).Any() ? g.Where(i => i.Grade.HasValue).Average(i => i.Grade!.Value) : null,
+                    Items = g.ToList()
+                }).ToList(),
+
+            ReportGroupBy.Status => items
+                .GroupBy(i => i.Status)
+                .Select(g => new EnrollmentReportGroupDto
+                {
+                    GroupKey = ((int)g.Key).ToString(),
+                    GroupLabel = g.Key.ToString(),
+                    Count = g.Count(),
+                    AverageGrade = g.Where(i => i.Grade.HasValue).Any() ? g.Where(i => i.Grade.HasValue).Average(i => i.Grade!.Value) : null,
+                    Items = g.ToList()
+                }).ToList(),
+
+            ReportGroupBy.Date => items
+                .GroupBy(i => i.EnrollmentDate.Date)
+                .Select(g => new EnrollmentReportGroupDto
+                {
+                    GroupKey = g.Key.ToString("yyyy-MM-dd"),
+                    GroupLabel = g.Key.ToString("MMMM dd, yyyy"),
+                    Count = g.Count(),
+                    AverageGrade = g.Where(i => i.Grade.HasValue).Any() ? g.Where(i => i.Grade.HasValue).Average(i => i.Grade!.Value) : null,
+                    Items = g.ToList()
+                }).ToList(),
+
+            _ => new List<EnrollmentReportGroupDto>()
+        };
+    }
+
+    private string GenerateReportTitle(EnrollmentReportRequestDto request)
+    {
+        var parts = new List<string> { "Enrollment Report" };
+
+        if (request.CourseId.HasValue)
+            parts.Add("for Specific Course");
+        
+        if (!string.IsNullOrEmpty(request.StudentId))
+            parts.Add("for Specific Student");
+
+        if (!string.IsNullOrEmpty(request.InstructorId))
+            parts.Add("for Specific Instructor");
+
+        if (request.Status.HasValue)
+            parts.Add($"- {request.Status.Value} Only");
+
+        if (request.StartDate.HasValue || request.EndDate.HasValue)
+        {
+            if (request.StartDate.HasValue && request.EndDate.HasValue)
+                parts.Add($"({request.StartDate.Value:MMM yyyy} - {request.EndDate.Value:MMM yyyy})");
+            else if (request.StartDate.HasValue)
+                parts.Add($"(From {request.StartDate.Value:MMM yyyy})");
+            else if (request.EndDate.HasValue)
+                parts.Add($"(Until {request.EndDate.Value:MMM yyyy})");
+        }
+
+        return string.Join(" ", parts);
     }
 }

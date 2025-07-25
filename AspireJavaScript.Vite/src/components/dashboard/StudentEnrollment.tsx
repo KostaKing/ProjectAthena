@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { enrollmentApi, type CreateEnrollmentDto } from '../../services/enrollmentApi';
-import { authApi, type UserDto } from '../../services/authApi';
+import { studentApi, type StudentDto } from '../../services/studentApi';
 import { type CourseDto } from '../../services/courseApi';
 import { toast } from 'sonner';
 import { ArrowLeft, UserPlus, Search, Users, BookOpen } from 'lucide-react';
@@ -15,23 +15,33 @@ interface StudentEnrollmentProps {
 }
 
 export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) {
-  const [students, setStudents] = useState<UserDto[]>([]);
+  const [students, setStudents] = useState<StudentDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<CourseDto | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  const [enrolledStudents, setEnrolledStudents] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchStudents();
   }, []);
 
+  useEffect(() => {
+    if (selectedCourse?.id) {
+      fetchEnrolledStudents(selectedCourse.id);
+    } else {
+      setEnrolledStudents(new Set());
+    }
+    setSelectedStudents(new Set()); // Clear selections when course changes
+  }, [selectedCourse]);
+
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const allUsers = await authApi.getAllUsers();
-      // Filter to get only active students (role 1 = Student)
-      const studentUsers = allUsers.filter(user => user.role === 1 && user.isActive);
-      setStudents(studentUsers);
+      const allStudents = await studentApi.getAllStudents();
+      // Filter to get only active students
+      const activeStudents = allStudents.filter(student => student.isActive);
+      setStudents(activeStudents);
     } catch (error) {
       toast.error('Failed to fetch students');
       console.error('Error fetching students:', error);
@@ -40,7 +50,19 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
     }
   };
 
+  const fetchEnrolledStudents = async (courseId: string) => {
+    try {
+      const enrollments = await enrollmentApi.getEnrollmentsByCourse(courseId);
+      const enrolled = new Set(enrollments.map(e => e.studentId).filter((id): id is string => Boolean(id)));
+      setEnrolledStudents(enrolled);
+    } catch (error) {
+      console.error('Error fetching enrolled students:', error);
+    }
+  };
+
   const handleStudentToggle = (studentId: string) => {
+    if (enrolledStudents.has(studentId)) return; // Prevent selecting already enrolled students
+    
     const newSelected = new Set(selectedStudents);
     if (newSelected.has(studentId)) {
       newSelected.delete(studentId);
@@ -68,7 +90,12 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
 
       await Promise.all(enrollmentPromises);
       toast.success(`Successfully enrolled ${selectedStudents.size} student(s) in ${selectedCourse.title}`);
-      onClose();
+      
+      // Refresh enrolled students list and clear selections
+      if (selectedCourse?.id) {
+        await fetchEnrolledStudents(selectedCourse.id);
+      }
+      setSelectedStudents(new Set());
     } catch (error) {
       toast.error('Failed to enroll students');
       console.error('Error enrolling students:', error);
@@ -181,27 +208,36 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
               </div>
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
-                {filteredStudents.map((student) => (
-                  <div
-                    key={student.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedStudents.has(student.id!)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:bg-muted/50'
-                    }`}
-                    onClick={() => handleStudentToggle(student.id!)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{student.fullName}</h4>
-                        <p className="text-sm text-muted-foreground">{student.email}</p>
+                {filteredStudents.map((student) => {
+                  const isEnrolled = enrolledStudents.has(student.id!);
+                  const isSelected = selectedStudents.has(student.id!);
+                  
+                  return (
+                    <div
+                      key={student.id}
+                      className={`p-3 border rounded-lg transition-colors ${
+                        isEnrolled
+                          ? 'border-muted bg-muted/30 cursor-not-allowed opacity-60'
+                          : isSelected
+                          ? 'border-primary bg-primary/5 cursor-pointer'
+                          : 'border-border hover:bg-muted/50 cursor-pointer'
+                      }`}
+                      onClick={() => handleStudentToggle(student.id!)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{student.fullName}</h4>
+                          <p className="text-sm text-muted-foreground">{student.email}</p>
+                        </div>
+                        {isEnrolled ? (
+                          <Badge variant="secondary">Already Enrolled</Badge>
+                        ) : isSelected ? (
+                          <Badge variant="default">Selected</Badge>
+                        ) : null}
                       </div>
-                      {selectedStudents.has(student.id!) && (
-                        <Badge variant="default">Selected</Badge>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

@@ -6,6 +6,85 @@ type UpdateEnrollmentStatusDto = components['schemas']['UpdateEnrollmentStatusDt
 type EnrollmentSummaryDto = components['schemas']['EnrollmentSummaryDto'];
 type EnrollmentReportDto = components['schemas']['EnrollmentReportDto'];
 
+// Advanced reporting types
+export interface EnrollmentReportRequestDto {
+  courseId?: string;
+  studentId?: string;
+  instructorId?: string;
+  status?: EnrollmentStatus;
+  startDate?: string;
+  endDate?: string;
+  minGrade?: number;
+  maxGrade?: number;
+  search?: string;
+  format?: ReportFormat;
+  groupBy?: ReportGroupBy;
+}
+
+export interface EnrollmentReportResponseDto {
+  title: string;
+  generatedAt: string;
+  parameters: EnrollmentReportRequestDto;
+  summary: EnrollmentReportSummaryDto;
+  groups: EnrollmentReportGroupDto[];
+  items: EnrollmentReportItemDto[];
+}
+
+export interface EnrollmentReportSummaryDto {
+  totalEnrollments: number;
+  activeEnrollments: number;
+  completedEnrollments: number;
+  droppedEnrollments: number;
+  suspendedEnrollments: number;
+  averageGrade?: number;
+  highestGrade?: number;
+  lowestGrade?: number;
+  uniqueCourses: number;
+  uniqueStudents: number;
+  uniqueInstructors: number;
+}
+
+export interface EnrollmentReportGroupDto {
+  groupKey: string;
+  groupLabel: string;
+  count: number;
+  averageGrade?: number;
+  items: EnrollmentReportItemDto[];
+}
+
+export interface EnrollmentReportItemDto {
+  enrollmentId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentNumber: string;
+  courseId: string;
+  courseCode: string;
+  courseTitle: string;
+  instructorId: string;
+  instructorName: string;
+  enrollmentDate: string;
+  status: EnrollmentStatus;
+  grade?: number;
+  completionDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export enum ReportFormat {
+  Json = 1,
+  Csv = 2,
+  Pdf = 3
+}
+
+export enum ReportGroupBy {
+  Course = 1,
+  Student = 2,
+  Instructor = 3,
+  Status = 4,
+  Date = 5
+}
+
 export interface PagedResult<T> {
   items: T[];
   totalCount: number;
@@ -143,6 +222,21 @@ class EnrollmentApiClient {
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error || 'Failed to generate enrollment report');
+    }
+
+    return response.json();
+  }
+
+  async generateAdvancedEnrollmentReport(request: EnrollmentReportRequestDto): Promise<EnrollmentReportResponseDto> {
+    const response = await fetch(`${API_BASE}/enrollments/reports/advanced`, {
+      method: 'POST',
+      headers: await this.getAuthHeaders(),
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to generate advanced enrollment report');
     }
 
     return response.json();
