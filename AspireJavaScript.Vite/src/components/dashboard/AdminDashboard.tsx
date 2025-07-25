@@ -5,8 +5,11 @@ import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { CourseManagement } from './CourseManagement';
 import { EnrollmentManagement } from './EnrollmentManagement';
+import { UserManagement } from './UserManagement';
 import { BookOpen, Users, GraduationCap, TrendingUp, Plus, Activity, RefreshCw, UserCheck, UserCog } from 'lucide-react';
 import { dashboardApi, type DashboardStatsDto } from '../../services/dashboardApi';
+import { Skeleton } from '../ui/skeleton';
+import { Alert, AlertDescription } from '../ui/alert';
 import { toast } from 'sonner';
 
 export function AdminDashboard() {
@@ -80,10 +83,11 @@ export function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="courses">Course Management</TabsTrigger>
-              <TabsTrigger value="enrollments">Enrollment Management</TabsTrigger>
+              <TabsTrigger value="courses">Courses</TabsTrigger>
+              <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -91,15 +95,26 @@ export function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <Card key={i}>
-                      <CardContent className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </CardHeader>
+                      <CardContent>
+                        <Skeleton className="h-8 w-16 mb-2" />
+                        <Skeleton className="h-3 w-32" />
                       </CardContent>
                     </Card>
                   ))}
                 </div>
+              ) : !stats ? (
+                <Alert>
+                  <AlertDescription>
+                    Failed to load dashboard statistics. Please try refreshing the page.
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <Card>
+                  <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
                       <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -112,7 +127,7 @@ export function AdminDashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -125,7 +140,7 @@ export function AdminDashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
                       <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -138,7 +153,7 @@ export function AdminDashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Average Grade</CardTitle>
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -253,6 +268,10 @@ export function AdminDashboard() {
 
             <TabsContent value="enrollments">
               <EnrollmentManagement />
+            </TabsContent>
+
+            <TabsContent value="users">
+              <UserManagement />
             </TabsContent>
           </Tabs>
         </div>

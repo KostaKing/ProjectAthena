@@ -236,6 +236,7 @@ public class EnrollmentService : IEnrollmentService
                 .Include(c => c.Instructor)
                 .Include(c => c.Enrollments.Where(e => e.IsActive))
                 .ThenInclude(e => e.Student)
+                    .ThenInclude(s => s.User)
                 .FirstOrDefaultAsync(c => c.Id == courseId && c.IsActive);
 
             if (course == null)

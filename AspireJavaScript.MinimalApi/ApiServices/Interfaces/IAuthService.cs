@@ -11,4 +11,5 @@ public interface IAuthService
     Task<UserDto> GetCurrentUserAsync(string userId);
     Task<UserDto> ChangePasswordAsync(string userId, ChangePasswordRequestDto request);
     Task<bool> ValidateTokenAsync(string token);
+    Task<List<UserDto>> GetAllUsersAsync();
 }

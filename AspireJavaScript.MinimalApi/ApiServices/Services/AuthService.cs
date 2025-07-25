@@ -178,4 +178,28 @@ public class AuthService : IAuthService
             return false;
         }
     }
+
+    public async Task<List<UserDto>> GetAllUsersAsync()
+    {
+        var users = _userManager.Users.Where(u => u.IsActive).ToList();
+        var userDtos = new List<UserDto>();
+
+        foreach (var user in users)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var userDto = user.ToDto();
+            
+            // Map role to numeric value - using role names for mapping
+            if (roles.Contains("Student"))
+                userDto.Role = ProjectAthena.Dtos.Enums.UserRole.Student;
+            else if (roles.Contains("Teacher"))
+                userDto.Role = ProjectAthena.Dtos.Enums.UserRole.Teacher;
+            else if (roles.Contains("Admin"))
+                userDto.Role = ProjectAthena.Dtos.Enums.UserRole.Admin;
+                
+            userDtos.Add(userDto);
+        }
+
+        return userDtos;
+    }
 }

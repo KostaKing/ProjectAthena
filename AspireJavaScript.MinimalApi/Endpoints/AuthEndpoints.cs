@@ -289,11 +289,24 @@ public static class AuthEndpoints
 
     private static async Task<IResult> GetAllUsersAsync(IAuthService authService)
     {
-        // This would require a separate service method for admin operations
-        // For now, return a placeholder
-        return Results.Problem(
-            statusCode: 501,
-            title: "Not implemented",
-            detail: "Admin user management not yet implemented");
+        try
+        {
+            var users = await authService.GetAllUsersAsync();
+            return Results.Ok(users);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Results.Problem(
+                statusCode: 401,
+                title: "Unauthorized",
+                detail: ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                statusCode: 500,
+                title: "Failed to get users",
+                detail: "An error occurred while retrieving users");
+        }
     }
 }

@@ -4,9 +4,10 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { CourseForm } from './CourseForm';
+import { CourseDetailView } from './CourseDetailView';
 import { courseApi, type CourseDto } from '../../services/courseApi';
 import { toast } from 'sonner';
-import { Plus, Search, Edit, Trash2, BookOpen, Users, Calendar } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, BookOpen, Users, Calendar, Eye } from 'lucide-react';
 
 export function CourseManagement() {
   const [courses, setCourses] = useState<CourseDto[]>([]);
@@ -14,6 +15,7 @@ export function CourseManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingCourse, setEditingCourse] = useState<CourseDto | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   const fetchCourses = async () => {
     try {
@@ -77,6 +79,15 @@ export function CourseManagement() {
     if (percentage >= 70) return { color: 'bg-yellow-500', text: 'High' };
     return { color: 'bg-green-500', text: 'Available' };
   };
+
+  if (selectedCourseId) {
+    return (
+      <CourseDetailView
+        courseId={selectedCourseId}
+        onBack={() => setSelectedCourseId(null)}
+      />
+    );
+  }
 
   if (showForm) {
     return (
@@ -196,6 +207,14 @@ export function CourseManagement() {
                   </div>
 
                   <div className="flex gap-2 pt-4">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setSelectedCourseId(course.id!)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

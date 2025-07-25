@@ -109,6 +109,24 @@ class AuthApiClient {
 
     return response.json();
   }
+
+  async getAllUsers(): Promise<UserDto[]> {
+    const token = localStorage.getItem('projectathena_token');
+    const response = await fetch(`${API_BASE}/admin/auth/users`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to get all users');
+    }
+
+    return response.json();
+  }
 }
 
 export const authApi = new AuthApiClient();

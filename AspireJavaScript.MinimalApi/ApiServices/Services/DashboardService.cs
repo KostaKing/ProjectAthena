@@ -28,29 +28,37 @@ public class DashboardService : IDashboardService
             stats.TotalStudents = await _context.Students.CountAsync(s => s.IsActive);
             stats.TotalTeachers = await _context.Teachers.CountAsync(t => t.IsActive);
 
-            // Get enrollment statistics
-            var enrollments = await _context.Enrollments
+            // Get enrollment statistics efficiently with single query
+            var enrollmentStats = await _context.Enrollments
                 .Where(e => e.IsActive)
-                .ToListAsync();
+                .GroupBy(e => 1)
+                .Select(g => new
+                {
+                    TotalEnrollments = g.Count(),
+                    ActiveEnrollments = g.Count(e => e.Status == EnrollmentStatus.Active),
+                    CompletedEnrollments = g.Count(e => e.Status == EnrollmentStatus.Completed),
+                    AverageGrade = g.Where(e => e.Status == EnrollmentStatus.Completed && e.Grade.HasValue)
+                                   .Average(e => (double?)e.Grade)
+                })
+                .FirstOrDefaultAsync();
 
-            stats.TotalEnrollments = enrollments.Count;
-            stats.ActiveEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Active);
-            stats.CompletedEnrollments = enrollments.Count(e => e.Status == EnrollmentStatus.Completed);
-
-            // Calculate completion rate
-            if (stats.TotalEnrollments > 0)
+            if (enrollmentStats != null)
             {
-                stats.CompletionRate = Math.Round((decimal)stats.CompletedEnrollments / stats.TotalEnrollments * 100, 1);
-            }
+                stats.TotalEnrollments = enrollmentStats.TotalEnrollments;
+                stats.ActiveEnrollments = enrollmentStats.ActiveEnrollments;
+                stats.CompletedEnrollments = enrollmentStats.CompletedEnrollments;
 
-            // Calculate average grade
-            var completedEnrollmentsWithGrades = enrollments
-                .Where(e => e.Status == EnrollmentStatus.Completed && e.Grade.HasValue)
-                .ToList();
+                // Calculate completion rate
+                if (stats.TotalEnrollments > 0)
+                {
+                    stats.CompletionRate = Math.Round((decimal)stats.CompletedEnrollments / stats.TotalEnrollments * 100, 1);
+                }
 
-            if (completedEnrollmentsWithGrades.Any())
-            {
-                stats.AverageGrade = Math.Round(completedEnrollmentsWithGrades.Average(e => e.Grade!.Value), 1);
+                // Set average grade
+                if (enrollmentStats.AverageGrade.HasValue)
+                {
+                    stats.AverageGrade = Math.Round((decimal)enrollmentStats.AverageGrade.Value, 1);
+                }
             }
 
             // Get recent activities (last 10)
