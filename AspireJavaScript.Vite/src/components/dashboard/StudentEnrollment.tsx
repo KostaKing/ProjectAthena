@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { enrollmentApi, type CreateEnrollmentDto } from '../../services/enrollmentApi';
-import { type UserDto } from '../../services/authApi';
+import { authApi, type UserDto } from '../../services/authApi';
 import { type CourseDto } from '../../services/courseApi';
 import { toast } from 'sonner';
 import { ArrowLeft, UserPlus, Search, Users, BookOpen } from 'lucide-react';
@@ -28,44 +28,10 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      // Note: In production, you'd have an endpoint to fetch students only
-      // For now, we'll use a mock implementation
-      const mockStudents: UserDto[] = [
-        {
-          id: 'student1',
-          firstName: 'Alice',
-          lastName: 'Johnson',
-          email: 'alice.johnson@email.com',
-          role: 1, // Student role
-          createdAt: new Date().toISOString(),
-          lastLoginAt: null,
-          isActive: true,
-          fullName: 'Alice Johnson'
-        },
-        {
-          id: 'student2',
-          firstName: 'Bob',
-          lastName: 'Smith',
-          email: 'bob.smith@email.com',
-          role: 1,
-          createdAt: new Date().toISOString(),
-          lastLoginAt: null,
-          isActive: true,
-          fullName: 'Bob Smith'
-        },
-        {
-          id: 'student3',
-          firstName: 'Carol',
-          lastName: 'Davis',
-          email: 'carol.davis@email.com',
-          role: 1,
-          createdAt: new Date().toISOString(),
-          lastLoginAt: null,
-          isActive: true,
-          fullName: 'Carol Davis'
-        }
-      ];
-      setStudents(mockStudents);
+      const allUsers = await authApi.getAllUsers();
+      // Filter to get only active students (role 1 = Student)
+      const studentUsers = allUsers.filter(user => user.role === 1 && user.isActive);
+      setStudents(studentUsers);
     } catch (error) {
       toast.error('Failed to fetch students');
       console.error('Error fetching students:', error);

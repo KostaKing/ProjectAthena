@@ -127,6 +127,42 @@ class AuthApiClient {
 
     return response.json();
   }
+
+  async activateUser(userId: string): Promise<UserDto> {
+    const token = localStorage.getItem('projectathena_token');
+    const response = await fetch(`${API_BASE}/admin/auth/users/${userId}/activate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to activate user');
+    }
+
+    return response.json();
+  }
+
+  async deactivateUser(userId: string): Promise<UserDto> {
+    const token = localStorage.getItem('projectathena_token');
+    const response = await fetch(`${API_BASE}/admin/auth/users/${userId}/deactivate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to deactivate user');
+    }
+
+    return response.json();
+  }
 }
 
 export const authApi = new AuthApiClient();

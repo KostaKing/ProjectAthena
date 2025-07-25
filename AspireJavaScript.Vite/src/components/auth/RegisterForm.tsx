@@ -5,7 +5,8 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Eye, EyeOff, UserPlus, GraduationCap, BookOpen } from 'lucide-react';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -117,18 +118,25 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-        <CardDescription className="text-center">
+    <Card className="w-full max-w-md mx-auto shadow-lg border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+      <CardHeader className="space-y-1 text-center">
+        <CardTitle className="text-2xl font-bold tracking-tight">Create Account</CardTitle>
+        <CardDescription>
           Join ProjectAthena today
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+      <CardContent className="space-y-6">
+        <form 
+          onSubmit={handleSubmit} 
+          className="space-y-4"
+          noValidate
+          aria-label="Create account form"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName" className="text-sm font-medium">
+                First Name
+              </Label>
               <Input
                 id="firstName"
                 name="firstName"
@@ -136,16 +144,29 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                 placeholder="John"
                 value={formData.firstName}
                 onChange={handleChange}
-                className={errors.firstName ? 'border-red-500' : ''}
+                className={errors.firstName ? 'border-red-500 focus:border-red-500' : ''}
                 disabled={isLoading}
+                aria-invalid={!!errors.firstName}
+                aria-describedby={errors.firstName ? 'firstName-error' : undefined}
+                autoComplete="given-name"
+                required
               />
               {errors.firstName && (
-                <p className="text-sm text-red-500">{errors.firstName}</p>
+                <p 
+                  id="firstName-error" 
+                  className="text-sm text-red-600 dark:text-red-400" 
+                  role="alert" 
+                  aria-live="polite"
+                >
+                  {errors.firstName}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName" className="text-sm font-medium">
+                Last Name
+              </Label>
               <Input
                 id="lastName"
                 name="lastName"
@@ -153,17 +174,30 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                 placeholder="Doe"
                 value={formData.lastName}
                 onChange={handleChange}
-                className={errors.lastName ? 'border-red-500' : ''}
+                className={errors.lastName ? 'border-red-500 focus:border-red-500' : ''}
                 disabled={isLoading}
+                aria-invalid={!!errors.lastName}
+                aria-describedby={errors.lastName ? 'lastName-error' : undefined}
+                autoComplete="family-name"
+                required
               />
               {errors.lastName && (
-                <p className="text-sm text-red-500">{errors.lastName}</p>
+                <p 
+                  id="lastName-error" 
+                  className="text-sm text-red-600 dark:text-red-400" 
+                  role="alert" 
+                  aria-live="polite"
+                >
+                  {errors.lastName}
+                </p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email Address
+            </Label>
             <Input
               id="email"
               name="email"
@@ -171,34 +205,72 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               placeholder="john.doe@example.com"
               value={formData.email}
               onChange={handleChange}
-              className={errors.email ? 'border-red-500' : ''}
+              className={errors.email ? 'border-red-500 focus:border-red-500' : ''}
               disabled={isLoading}
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'email-error' : undefined}
+              autoComplete="email"
+              required
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
+              <p 
+                id="email-error" 
+                className="text-sm text-red-600 dark:text-red-400" 
+                role="alert" 
+                aria-live="polite"
+              >
+                {errors.email}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.role ? 'border-red-500' : ''}`}
+            <Label htmlFor="role" className="text-sm font-medium">
+              Role
+            </Label>
+            <Select 
+              value={formData.role.toString()} 
+              onValueChange={(value) => handleChange({ target: { name: 'role', value } } as any)}
               disabled={isLoading}
             >
-              <option value={UserRole.Value1}>Student</option>
-              <option value={UserRole.Value2}>Teacher</option>
-            </select>
+              <SelectTrigger 
+                className={errors.role ? 'border-red-500 focus:border-red-500' : ''}
+                aria-invalid={!!errors.role}
+                aria-describedby={errors.role ? 'role-error' : undefined}
+              >
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UserRole.Value1.toString()}>
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Student
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserRole.Value2.toString()}>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Teacher
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             {errors.role && (
-              <p className="text-sm text-red-500">{errors.role}</p>
+              <p 
+                id="role-error" 
+                className="text-sm text-red-600 dark:text-red-400" 
+                role="alert" 
+                aria-live="polite"
+              >
+                {errors.role}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium">
+              Password
+            </Label>
             <div className="relative">
               <Input
                 id="password"
@@ -207,8 +279,12 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                 placeholder="Create a strong password"
                 value={formData.password}
                 onChange={handleChange}
-                className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                className={errors.password ? 'border-red-500 focus:border-red-500 pr-10' : 'pr-10'}
                 disabled={isLoading}
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : 'password-requirements'}
+                autoComplete="new-password"
+                required
               />
               <Button
                 type="button"
@@ -217,21 +293,40 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-gray-500" />
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <Eye className="h-4 w-4 text-gray-500" />
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 )}
               </Button>
             </div>
-            {errors.password && (
-              <p className="text-sm text-red-500">{errors.password}</p>
+            {errors.password ? (
+              <p 
+                id="password-error" 
+                className="text-sm text-red-600 dark:text-red-400" 
+                role="alert" 
+                aria-live="polite"
+              >
+                {errors.password}
+              </p>
+            ) : (
+              <p 
+                id="password-requirements" 
+                className="text-xs text-muted-foreground"
+                aria-live="polite"
+              >
+                Must contain uppercase, lowercase, number, and special character
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword" className="text-sm font-medium">
+              Confirm Password
+            </Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
@@ -240,8 +335,12 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                className={errors.confirmPassword ? 'border-red-500 focus:border-red-500 pr-10' : 'pr-10'}
                 disabled={isLoading}
+                aria-invalid={!!errors.confirmPassword}
+                aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
+                autoComplete="new-password"
+                required
               />
               <Button
                 type="button"
@@ -250,24 +349,38 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 disabled={isLoading}
+                aria-label={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+                tabIndex={-1}
               >
                 {showConfirmPassword ? (
-                  <EyeOff className="h-4 w-4 text-gray-500" />
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <Eye className="h-4 w-4 text-gray-500" />
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 )}
               </Button>
             </div>
             {errors.confirmPassword && (
-              <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+              <p 
+                id="confirmPassword-error" 
+                className="text-sm text-red-600 dark:text-red-400" 
+                role="alert" 
+                aria-live="polite"
+              >
+                {errors.confirmPassword}
+              </p>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full h-11 text-sm font-medium" 
+            disabled={isLoading}
+            aria-describedby={isLoading ? 'register-loading' : undefined}
+          >
             {isLoading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Creating Account...
+                <span id="register-loading">Creating Account...</span>
               </>
             ) : (
               <>
@@ -278,14 +391,15 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           </Button>
         </form>
       </CardContent>
-      <CardFooter>
-        <p className="text-center text-sm text-gray-600 w-full">
+      <CardFooter className="pt-6">
+        <p className="text-center text-sm text-muted-foreground w-full">
           Already have an account?{' '}
           <Button
             variant="link"
-            className="p-0 h-auto font-semibold text-primary"
+            className="p-0 h-auto font-semibold text-primary hover:underline"
             onClick={onSwitchToLogin}
             disabled={isLoading}
+            aria-label="Switch to login form"
           >
             Sign in here
           </Button>

@@ -77,8 +77,9 @@ public class AuthService : IAuthService
 
         if (!result.Succeeded)
         {
-            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to create user: {errors}");
+            var errors = string.Join("\n", result.Errors.Select(e => e.Description));
+            _logger.LogWarning("User creation failed for {Email}: {Errors}", request.Email, errors);
+            throw new InvalidOperationException($"Failed to create user:\n{errors}");
         }
 
         // Add user to role
@@ -181,7 +182,7 @@ public class AuthService : IAuthService
 
     public async Task<List<UserDto>> GetAllUsersAsync()
     {
-        var users = _userManager.Users.Where(u => u.IsActive).ToList();
+        var users = _userManager.Users.ToList(); // Include both active and inactive users
         var userDtos = new List<UserDto>();
 
         foreach (var user in users)
@@ -201,5 +202,50 @@ public class AuthService : IAuthService
         }
 
         return userDtos;
+    }
+
+    public async Task<UserDto> ActivateUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            throw new InvalidOperationException("User not found");
+        }
+
+        user.IsActive = true;
+        var result = await _userManager.UpdateAsync(user);
+        
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to activate user: {errors}");
+        }
+
+        _logger.LogInformation("User {UserId} activated", userId);
+        return user.ToDto();
+    }
+
+    public async Task<UserDto> DeactivateUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            throw new InvalidOperationException("User not found");
+        }
+
+        user.IsActive = false;
+        var result = await _userManager.UpdateAsync(user);
+        
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to deactivate user: {errors}");
+        }
+
+        // Revoke all refresh tokens for this user
+        await _tokenService.RevokeRefreshTokenAsync(userId);
+
+        _logger.LogInformation("User {UserId} deactivated", userId);
+        return user.ToDto();
     }
 }

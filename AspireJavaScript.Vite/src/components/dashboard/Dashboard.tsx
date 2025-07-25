@@ -1,89 +1,100 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { UserRole } from '../../types/auth';
 import { AdminDashboard } from './AdminDashboard';
 import { Header } from '../layout/Header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Users, BookOpen, Settings } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { BookOpen, GraduationCap } from 'lucide-react';
+import { courseApi, type CourseDto } from '../../services/courseApi';
+import { enrollmentApi, type EnrollmentDto } from '../../services/enrollmentApi';
+import { toast } from 'sonner';
 
 export function Dashboard() {
   const { user } = useAuth();
+  const [courses, setCourses] = useState<CourseDto[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentDto[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Route admin users to the dedicated AdminDashboard
   if (user?.role === UserRole.Value3) {
     return <AdminDashboard />;
   }
 
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      if (user?.role === UserRole.Value2) { // Teacher
+        const allCourses = await courseApi.getAllCourses();
+        // Filter courses where user is the instructor
+        const teacherCourses = allCourses.filter((course: CourseDto) => course.instructorId === user.id);
+        setCourses(teacherCourses);
+      } else if (user?.role === UserRole.Value1) { // Student
+        const userEnrollmentsResult = await enrollmentApi.getAllEnrollments();
+        // Filter enrollments for current user
+        const studentEnrollments = userEnrollmentsResult.items.filter((enrollment: EnrollmentDto) => enrollment.studentId === user.id);
+        setEnrollments(studentEnrollments);
+        
+        // Get course details for enrolled courses
+        if (studentEnrollments.length > 0) {
+          const allCourses = await courseApi.getAllCourses();
+          const enrolledCourses = allCourses.filter((course: CourseDto) => 
+            studentEnrollments.some((enrollment: EnrollmentDto) => enrollment.courseId === course.id)
+          );
+          setCourses(enrolledCourses);
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to load dashboard data');
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getRoleSpecificContent = () => {
     if (!user) return null;
 
     switch (user.role) {
-      case UserRole.Value3: // Admin
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">3</div>
-                <p className="text-xs text-muted-foreground">
-                  +0% from last month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">System Status</CardTitle>
-                <Settings className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">Online</div>
-                <p className="text-xs text-muted-foreground">
-                  All systems operational
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1</div>
-                <p className="text-xs text-muted-foreground">
-                  Current active users
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        );
       case UserRole.Value2: // Teacher
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Card>
-              <CardHeader>
-                <CardTitle>My Classes</CardTitle>
-                <CardDescription>
-                  Manage your classes and students
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">My Classes</CardTitle>
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  No classes assigned yet.
+                <div className="text-2xl font-bold">{loading ? '...' : courses.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {courses.length === 1 ? 'Active course' : 'Active courses'}
                 </p>
+                {!loading && courses.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium">Recent courses:</p>
+                    {courses.slice(0, 3).map(course => (
+                      <div key={course.id} className="text-sm text-muted-foreground">
+                        {course.title} ({course.courseCode})
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>
-                  Your recent teaching activities
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                <GraduationCap className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  No recent activity.
+                <div className="text-2xl font-bold">{loading ? '...' : courses.reduce((total, course) => total + (course.currentEnrollments || 0), 0)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Across all your courses
                 </p>
               </CardContent>
             </Card>
@@ -93,29 +104,57 @@ export function Dashboard() {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Card>
-              <CardHeader>
-                <CardTitle>My Courses</CardTitle>
-                <CardDescription>
-                  Your enrolled courses
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">My Courses</CardTitle>
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  No courses enrolled yet.
+                <div className="text-2xl font-bold">{loading ? '...' : courses.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {courses.length === 1 ? 'Enrolled course' : 'Enrolled courses'}
                 </p>
+                {!loading && courses.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium">Current courses:</p>
+                    {courses.slice(0, 3).map(course => (
+                      <div key={course.id} className="text-sm text-muted-foreground">
+                        {course.title} ({course.courseCode})
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!loading && courses.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    No courses enrolled yet.
+                  </p>
+                )}
               </CardContent>
             </Card>
             <Card>
-              <CardHeader>
-                <CardTitle>Assignments</CardTitle>
-                <CardDescription>
-                  Upcoming assignments and deadlines
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Enrollments</CardTitle>
+                <GraduationCap className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  No assignments due.
+                <div className="text-2xl font-bold">{loading ? '...' : enrollments.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total enrollments
                 </p>
+                {!loading && enrollments.length > 0 && (
+                  <div className="mt-4 space-y-1">
+                    <p className="text-sm font-medium">Recent enrollments:</p>
+                    {enrollments.slice(-3).map(enrollment => (
+                      <div key={enrollment.id} className="text-sm text-muted-foreground">
+                        Status: {enrollment.status}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!loading && enrollments.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    No enrollments found.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -126,16 +165,16 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Welcome back, {user?.firstName}!
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-muted-foreground">
               Here's what's happening in your ProjectAthena dashboard.
             </p>
           </div>

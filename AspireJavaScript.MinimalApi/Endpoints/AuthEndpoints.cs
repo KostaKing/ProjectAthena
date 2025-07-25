@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using ProjectAthena.Dtos.Auth;
 using ProjectAthena.MinimalApi.ApiServices.Interfaces;
 using System.Security.Claims;
+using System.Diagnostics;
 
 namespace ProjectAthena.MinimalApi.Endpoints;
 
@@ -78,6 +79,24 @@ public static class AuthEndpoints
             .Produces<List<UserDto>>()
             .Produces(401)
             .Produces(403);
+
+        adminGroup.MapPost("/users/{userId}/activate", ActivateUserAsync)
+            .WithName("ActivateUser")
+            .WithSummary("Activate user")
+            .WithDescription("Activate a user account (Admin only)")
+            .Produces<UserDto>()
+            .Produces(401)
+            .Produces(403)
+            .Produces(400);
+
+        adminGroup.MapPost("/users/{userId}/deactivate", DeactivateUserAsync)
+            .WithName("DeactivateUser")
+            .WithSummary("Deactivate user")
+            .WithDescription("Deactivate a user account (Admin only)")
+            .Produces<UserDto>()
+            .Produces(401)
+            .Produces(403)
+            .Produces(400);
     }
 
     private static async Task<IResult> LoginAsync(
@@ -108,7 +127,12 @@ public static class AuthEndpoints
             return Results.Problem(
                 statusCode: 500,
                 title: "Login failed",
-                detail: "An error occurred during login");
+                detail: "An error occurred during login",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 
@@ -140,7 +164,12 @@ public static class AuthEndpoints
             return Results.Problem(
                 statusCode: 500,
                 title: "Registration failed",
-                detail: "An error occurred during registration");
+                detail: "An error occurred during registration",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 
@@ -307,6 +336,52 @@ public static class AuthEndpoints
                 statusCode: 500,
                 title: "Failed to get users",
                 detail: "An error occurred while retrieving users");
+        }
+    }
+
+    private static async Task<IResult> ActivateUserAsync(string userId, IAuthService authService)
+    {
+        try
+        {
+            var user = await authService.ActivateUserAsync(userId);
+            return Results.Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.Problem(
+                statusCode: 400,
+                title: "Activation failed",
+                detail: ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                statusCode: 500,
+                title: "Activation failed",
+                detail: "An error occurred while activating the user");
+        }
+    }
+
+    private static async Task<IResult> DeactivateUserAsync(string userId, IAuthService authService)
+    {
+        try
+        {
+            var user = await authService.DeactivateUserAsync(userId);
+            return Results.Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.Problem(
+                statusCode: 400,
+                title: "Deactivation failed",
+                detail: ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                statusCode: 500,
+                title: "Deactivation failed",
+                detail: "An error occurred while deactivating the user");
         }
     }
 }

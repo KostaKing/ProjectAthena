@@ -1,23 +1,22 @@
 import { useAuth } from '../../hooks/useAuth';
 import { UserRole } from '../../types/auth';
 import { Button } from '../ui/button';
-import { LogOut, User, Settings } from 'lucide-react';
+import { ThemeToggleButton } from '../ui/theme-toggle';
+import { Badge } from '../ui/badge';
+import { UserAvatar } from '../ui/user-avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '../ui/dropdown-menu';
+import { LogOut, Settings, ChevronDown, Shield, GraduationCap, BookOpen } from 'lucide-react';
 
 export function Header() {
   const { user, logout } = useAuth();
 
-  const getRoleColor = (role: UserRole) => {
-    switch (role) {
-      case UserRole.Value3: // Admin
-        return 'bg-red-100 text-red-800';
-      case UserRole.Value2: // Teacher
-        return 'bg-blue-100 text-blue-800';
-      case UserRole.Value1: // Student
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getRoleName = (role: UserRole) => {
     switch (role) {
@@ -33,41 +32,95 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-gray-900">
-              ProjectAthena
-            </h1>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center">
+        <div className="flex items-center space-x-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <GraduationCap className="h-5 w-5" />
           </div>
+          <h1 className="text-xl font-bold tracking-tight">
+            ProjectAthena
+          </h1>
+        </div>
 
-          <div className="flex items-center space-x-4">
-            {user && (
-              <>
-                <div className="flex items-center space-x-3 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700">{user.fullName}</span>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role!)}`}
+        <div className="flex flex-1 items-center justify-end space-x-4">
+          {user && (
+            <>
+              <div className="hidden md:flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm">
+                  <span className="font-medium">{user.fullName}</span>
+                  <Badge 
+                    variant={user.role === UserRole.Value3 ? 'destructive' : user.role === UserRole.Value2 ? 'secondary' : 'default'}
+                    className="text-xs"
                   >
+                    {user.role === UserRole.Value3 && <Shield className="mr-1 h-3 w-3" />}
+                    {user.role === UserRole.Value2 && <BookOpen className="mr-1 h-3 w-3" />}
+                    {user.role === UserRole.Value1 && <GraduationCap className="mr-1 h-3 w-3" />}
                     {getRoleName(user.role!)}
-                  </span>
+                  </Badge>
                 </div>
+              </div>
 
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={logout}>
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
+              <div className="flex items-center space-x-2">
+                <ThemeToggleButton />
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="relative h-9 w-9 rounded-full md:h-8 md:w-auto md:rounded-md md:px-3"
+                      aria-label="User menu"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <UserAvatar user={{
+                          firstName: user.firstName || undefined,
+                          lastName: user.lastName || undefined,
+                          fullName: user.fullName || undefined,
+                          email: user.email || undefined
+                        }} size="sm" />
+                        <span className="hidden md:inline-block text-sm font-medium">
+                          {user.firstName}
+                        </span>
+                        <ChevronDown className="hidden md:inline-block h-4 w-4" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.fullName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                        <div className="pt-1">
+                          <Badge 
+                            variant={user.role === UserRole.Value3 ? 'destructive' : user.role === UserRole.Value2 ? 'secondary' : 'default'}
+                            className="text-xs w-fit"
+                          >
+                            {user.role === UserRole.Value3 && <Shield className="mr-1 h-3 w-3" />}
+                            {user.role === UserRole.Value2 && <BookOpen className="mr-1 h-3 w-3" />}
+                            {user.role === UserRole.Value1 && <GraduationCap className="mr-1 h-3 w-3" />}
+                            {getRoleName(user.role!)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="text-red-600 dark:text-red-400">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sign out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>

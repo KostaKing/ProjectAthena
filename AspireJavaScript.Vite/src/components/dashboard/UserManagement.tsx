@@ -1,26 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { DataTable } from '../ui/data-table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { authApi, type UserDto } from '../../services/authApi';
 import { toast } from 'sonner';
+import { ColumnDef } from '@tanstack/react-table';
 import { 
   Users, 
   UserPlus, 
   Search, 
   Edit, 
-  Trash2, 
-  Mail, 
-  Calendar,
+  Mail,
   UserCheck,
   UserX,
   GraduationCap,
   BookOpen,
-  Shield
+  Shield,
+  User,
+  MoreHorizontal,
+  ArrowUpDown
 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 // User role mapping
 const UserRoleValues = {
@@ -51,6 +56,28 @@ export function UserManagement() {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleActivateUser = async (userId: string) => {
+    try {
+      await authApi.activateUser(userId);
+      toast.success('User activated successfully');
+      await fetchUsers(); // Refresh the user list
+    } catch (error) {
+      toast.error('Failed to activate user');
+      console.error('Error activating user:', error);
+    }
+  };
+
+  const handleDeactivateUser = async (userId: string) => {
+    try {
+      await authApi.deactivateUser(userId);
+      toast.success('User deactivated successfully');
+      await fetchUsers(); // Refresh the user list
+    } catch (error) {
+      toast.error('Failed to deactivate user');
+      console.error('Error deactivating user:', error);
     }
   };
 
@@ -108,6 +135,147 @@ export function UserManagement() {
     return dateString ? new Date(dateString).toLocaleDateString() : 'N/A';
   };
 
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    user: UserDto | null;
+    action: 'activate' | 'deactivate';
+  }>({ open: false, user: null, action: 'activate' });
+
+  const userColumns: ColumnDef<UserDto>[] = useMemo(() => [
+    {
+      id: "user",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          User
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+              <User className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <div className="font-medium">
+                {user.fullName || `${user.firstName} ${user.lastName}`}
+              </div>
+              <div className="text-sm text-muted-foreground flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                {user.email}
+              </div>
+            </div>
+          </div>
+        );
+      },
+      accessorFn: (row) => row.fullName || `${row.firstName} ${row.lastName}`,
+    },
+    {
+      accessorKey: "role",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Role
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => getRoleBadge(row.getValue("role")),
+    },
+    {
+      accessorKey: "isActive",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => getStatusBadge(row.getValue("isActive")),
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Created
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const date = row.getValue("createdAt") as string;
+        return (
+          <div className="text-sm">
+            <div>{formatDate(date)}</div>
+            {row.original.lastLoginAt && (
+              <div className="text-xs text-muted-foreground">
+                Last login: {formatDate(row.original.lastLoginAt)}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit User
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className={user.isActive ? "text-red-600" : "text-green-600"}
+                onClick={() => setConfirmDialog({
+                  open: true,
+                  user,
+                  action: user.isActive ? 'deactivate' : 'activate'
+                })}
+              >
+                {user.isActive ? (
+                  <>
+                    <UserX className="mr-2 h-4 w-4" />
+                    Deactivate
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Activate
+                  </>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ], []);
+
   const userCounts = {
     total: users.length,
     students: users.filter(u => u.role === UserRoleValues.Student).length,
@@ -119,8 +287,27 @@ export function UserManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="space-y-1">
+            <div className="h-8 w-64 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-96 bg-muted animate-pulse rounded" />
+          </div>
+          <div className="h-9 w-24 bg-muted animate-pulse rounded" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-8 bg-muted animate-pulse rounded mb-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -128,14 +315,14 @@ export function UserManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">User Management</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">User Management</h2>
           <p className="text-muted-foreground">
             Manage all users in your system
           </p>
         </div>
-        <Button>
+        <Button className="shrink-0">
           <UserPlus className="mr-2 h-4 w-4" />
           Add User
         </Button>
@@ -143,60 +330,72 @@ export function UserManagement() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
+              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userCounts.total}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Students</CardTitle>
-            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-full">
+              <GraduationCap className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userCounts.students}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md border-l-4 border-l-purple-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Teachers</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-full">
+              <BookOpen className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userCounts.teachers}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md border-l-4 border-l-red-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Admins</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-red-100 dark:bg-red-900 rounded-full">
+              <Shield className="h-4 w-4 text-red-600 dark:text-red-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userCounts.admins}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md border-l-4 border-l-emerald-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900 rounded-full">
+              <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userCounts.active}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md border-l-4 border-l-gray-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Inactive</CardTitle>
-            <UserX className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+              <UserX className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userCounts.inactive}</div>
@@ -206,21 +405,35 @@ export function UserManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">All Users ({userCounts.total})</TabsTrigger>
-          <TabsTrigger value="students">Students ({userCounts.students})</TabsTrigger>
-          <TabsTrigger value="teachers">Teachers ({userCounts.teachers})</TabsTrigger>
-          <TabsTrigger value="admins">Admins ({userCounts.admins})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 lg:w-fit">
+          <TabsTrigger value="all" className="text-sm">
+            All ({userCounts.total})
+          </TabsTrigger>
+          <TabsTrigger value="students" className="text-sm">
+            <GraduationCap className="mr-1 h-3 w-3" />
+            Students ({userCounts.students})
+          </TabsTrigger>
+          <TabsTrigger value="teachers" className="text-sm">
+            <BookOpen className="mr-1 h-3 w-3" />
+            Teachers ({userCounts.teachers})
+          </TabsTrigger>
+          <TabsTrigger value="admins" className="text-sm">
+            <Shield className="mr-1 h-3 w-3" />
+            Admins ({userCounts.admins})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
           {/* Search and Filter */}
-          <Card>
+          <Card className="transition-all duration-200 hover:shadow-md">
             <CardHeader>
-              <CardTitle>Search & Filter Users</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Search & Filter Users
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -228,101 +441,118 @@ export function UserManagement() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
+                    aria-label="Search users"
                   />
                 </div>
-                <Select value={roleFilter.toString()} onValueChange={(value: string) => setRoleFilter(value === 'all' ? 'all' : parseInt(value))}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value={UserRoleValues.Student.toString()}>Students</SelectItem>
-                    <SelectItem value={UserRoleValues.Teacher.toString()}>Teachers</SelectItem>
-                    <SelectItem value={UserRoleValues.Admin.toString()}>Admins</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter.toString()} onValueChange={(value: string) => setStatusFilter(value === 'all' ? 'all' : value === 'true')}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="true">Active</SelectItem>
-                    <SelectItem value="false">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Select value={roleFilter.toString()} onValueChange={(value: string) => setRoleFilter(value === 'all' ? 'all' : parseInt(value))}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Filter by role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value={UserRoleValues.Student.toString()}>
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4" />
+                          Students
+                        </div>
+                      </SelectItem>
+                      <SelectItem value={UserRoleValues.Teacher.toString()}>
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          Teachers
+                        </div>
+                      </SelectItem>
+                      <SelectItem value={UserRoleValues.Admin.toString()}>
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Admins
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter.toString()} onValueChange={(value: string) => setStatusFilter(value === 'all' ? 'all' : value === 'true')}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="true">
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="h-4 w-4 text-green-600" />
+                          Active
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="false">
+                        <div className="flex items-center gap-2">
+                          <UserX className="h-4 w-4 text-gray-600" />
+                          Inactive
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* User List */}
-          <div className="space-y-4">
-            {filteredUsers.length === 0 ? (
-              <Card>
-                <CardContent className="flex items-center justify-center py-8">
-                  <div className="text-center">
-                    <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No users found</h3>
-                    <p className="text-muted-foreground mb-4">
-                      {searchTerm || roleFilter !== 'all' || statusFilter !== 'all'
-                        ? 'No users match your search criteria.' 
-                        : 'No users found in the system.'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredUsers.map((user) => (
-                <Card key={user.id}>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-4">
-                          <h3 className="font-semibold text-lg">{user.fullName || `${user.firstName} ${user.lastName}`}</h3>
-                          {getRoleBadge(user.role)}
-                          {getStatusBadge(user.isActive)}
-                        </div>
-                        
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            <span>{user.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>Created: {formatDate(user.createdAt)}</span>
-                          </div>
-                          {user.lastLoginAt && (
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              <span>Last Login: {formatDate(user.lastLoginAt)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          {user.isActive ? 'Deactivate' : 'Activate'}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+          {/* User Data Table */}
+          <Card className="transition-all duration-200 hover:shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Directory ({filteredUsers.length} users)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                columns={userColumns}
+                data={filteredUsers}
+                searchKey="fullName"
+                searchPlaceholder="Search users by name..."
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmDialog.action === 'activate' ? 'Activate User' : 'Deactivate User'}
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {confirmDialog.action} {confirmDialog.user?.fullName || confirmDialog.user?.firstName}?
+              {confirmDialog.action === 'deactivate' && ' This will revoke their access to the system.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmDialog({ open: false, user: null, action: 'activate' })}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant={confirmDialog.action === 'deactivate' ? 'destructive' : 'default'}
+              onClick={async () => {
+                if (confirmDialog.user) {
+                  if (confirmDialog.action === 'activate') {
+                    await handleActivateUser(confirmDialog.user.id!);
+                  } else {
+                    await handleDeactivateUser(confirmDialog.user.id!);
+                  }
+                }
+                setConfirmDialog({ open: false, user: null, action: 'activate' });
+              }}
+            >
+              {confirmDialog.action === 'activate' ? 'Activate' : 'Deactivate'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

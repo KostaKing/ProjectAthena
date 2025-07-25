@@ -77,34 +77,54 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
-        <CardDescription className="text-center">
+    <Card className="w-full max-w-md mx-auto shadow-lg border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+      <CardHeader className="space-y-1 text-center">
+        <CardTitle className="text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
+        <CardDescription>
           Sign in to your ProjectAthena account
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className="space-y-6">
+        <form 
+          onSubmit={handleSubmit} 
+          className="space-y-4"
+          noValidate
+          aria-label="Sign in form"
+        >
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email Address
+            </Label>
             <Input
               id="email"
               name="email"
               type="email"
-              placeholder="Enter your email"
+              placeholder="Enter your email address"
               value={formData.email}
               onChange={handleChange}
-              className={errors.email ? 'border-red-500' : ''}
+              className={errors.email ? 'border-red-500 focus:border-red-500' : ''}
               disabled={isLoading}
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'email-error' : undefined}
+              autoComplete="email"
+              required
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
+              <p 
+                id="email-error" 
+                className="text-sm text-red-600 dark:text-red-400" 
+                role="alert" 
+                aria-live="polite"
+              >
+                {errors.email}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium">
+              Password
+            </Label>
             <div className="relative">
               <Input
                 id="password"
@@ -113,8 +133,12 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
-                className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                className={errors.password ? 'border-red-500 focus:border-red-500 pr-10' : 'pr-10'}
                 disabled={isLoading}
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
+                autoComplete="current-password"
+                required
               />
               <Button
                 type="button"
@@ -123,24 +147,38 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-gray-500" />
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <Eye className="h-4 w-4 text-gray-500" />
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 )}
               </Button>
             </div>
             {errors.password && (
-              <p className="text-sm text-red-500">{errors.password}</p>
+              <p 
+                id="password-error" 
+                className="text-sm text-red-600 dark:text-red-400" 
+                role="alert" 
+                aria-live="polite"
+              >
+                {errors.password}
+              </p>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full h-11 text-sm font-medium" 
+            disabled={isLoading}
+            aria-describedby={isLoading ? 'signin-loading' : undefined}
+          >
             {isLoading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Signing In...
+                <span id="signin-loading">Signing In...</span>
               </>
             ) : (
               <>
@@ -162,9 +200,9 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-xs text-center text-muted-foreground">
-            Click to auto-fill credentials for demo accounts
+            Quick demo access - click to auto-fill credentials
           </p>
           <div className="grid grid-cols-3 gap-2">
             <Button
@@ -172,45 +210,49 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
               size="sm"
               onClick={() => handleDemoFill('admin')}
               disabled={isLoading}
-              className="text-xs hover:bg-blue-50 hover:border-blue-300"
+              className="text-xs py-2 hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950 transition-colors"
+              aria-label="Fill admin demo credentials"
               title="admin@projectathena.com"
             >
-              👨‍💼 Admin
+              Admin
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleDemoFill('teacher')}
               disabled={isLoading}
-              className="text-xs hover:bg-green-50 hover:border-green-300"
+              className="text-xs py-2 hover:bg-green-50 hover:border-green-300 dark:hover:bg-green-950 transition-colors"
+              aria-label="Fill teacher demo credentials"
               title="teacher@projectathena.com"
             >
-              👩‍🏫 Teacher
+              Teacher
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleDemoFill('student')}
               disabled={isLoading}
-              className="text-xs hover:bg-purple-50 hover:border-purple-300"
+              className="text-xs py-2 hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950 transition-colors"
+              aria-label="Fill student demo credentials"
               title="student@projectathena.com"
             >
-              👨‍🎓 Student
+              Student
             </Button>
           </div>
           <p className="text-xs text-center text-muted-foreground">
-            All demo accounts use password: <code className="bg-gray-100 px-1 rounded">Admin123!</code>
+            All demo accounts use password: <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">Admin123!</code>
           </p>
         </div>
       </CardContent>
-      <CardFooter>
-        <p className="text-center text-sm text-gray-600 w-full">
+      <CardFooter className="pt-6">
+        <p className="text-center text-sm text-muted-foreground w-full">
           Don't have an account?{' '}
           <Button
             variant="link"
-            className="p-0 h-auto font-semibold text-primary"
+            className="p-0 h-auto font-semibold text-primary hover:underline"
             onClick={onSwitchToRegister}
             disabled={isLoading}
+            aria-label="Switch to registration form"
           >
             Sign up here
           </Button>
