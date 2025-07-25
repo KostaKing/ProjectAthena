@@ -198,6 +198,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dashboard/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get dashboard statistics */
+        get: operations["GetDashboardStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/enrollments": {
         parameters: {
             query?: never;
@@ -205,7 +222,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get all enrollments */
+        /** Get all enrollments with search and pagination */
         get: operations["GetAllEnrollments"];
         put?: never;
         /** Create a new enrollment (assign student to course) */
@@ -522,6 +539,25 @@ export interface components {
             /** Format: date-time */
             hireDate?: string | null;
         };
+        DashboardStatsDto: {
+            /** Format: int32 */
+            totalCourses?: number;
+            /** Format: int32 */
+            totalEnrollments?: number;
+            /** Format: int32 */
+            activeEnrollments?: number;
+            /** Format: int32 */
+            completedEnrollments?: number;
+            /** Format: double */
+            completionRate?: number;
+            /** Format: double */
+            averageGrade?: number | null;
+            /** Format: int32 */
+            totalStudents?: number;
+            /** Format: int32 */
+            totalTeachers?: number;
+            recentActivities?: components["schemas"]["RecentActivityDto"][] | null;
+        };
         EnrollmentDto: {
             /** Format: uuid */
             id?: string;
@@ -544,6 +580,19 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string | null;
             isActive?: boolean;
+        };
+        EnrollmentDtoPagedResult: {
+            items?: components["schemas"]["EnrollmentDto"][] | null;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            /** Format: int32 */
+            readonly totalPages?: number;
+            readonly hasNextPage?: boolean;
+            readonly hasPreviousPage?: boolean;
         };
         EnrollmentReportDto: {
             courseCode?: string | null;
@@ -605,6 +654,15 @@ export interface components {
             user: components["schemas"]["UserDto"];
             /** Format: date-time */
             expiresAt?: string;
+        };
+        RecentActivityDto: {
+            id?: string | null;
+            type?: string | null;
+            description?: string | null;
+            /** Format: date-time */
+            timestamp?: string;
+            studentName?: string | null;
+            courseName?: string | null;
         };
         RefreshTokenRequestDto: {
             refreshToken: string | null;
@@ -1144,7 +1202,7 @@ export interface operations {
             };
         };
     };
-    GetAllEnrollments: {
+    GetDashboardStats: {
         parameters: {
             query?: never;
             header?: never;
@@ -1159,7 +1217,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnrollmentDto"][];
+                    "application/json": components["schemas"]["DashboardStatsDto"];
+                };
+            };
+        };
+    };
+    GetAllEnrollments: {
+        parameters: {
+            query?: {
+                search?: string;
+                status?: number;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentDtoPagedResult"];
                 };
             };
         };

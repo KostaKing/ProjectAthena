@@ -1,6 +1,7 @@
 using AspireJavaScript.MinimalApi.ApiServices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using ProjectAthena.Dtos.Enrollments;
+using ProjectAthena.Dtos.Common;
 using ProjectAthena.Data.Models;
 
 namespace AspireJavaScript.MinimalApi.Endpoints;
@@ -15,8 +16,8 @@ public static class EnrollmentEndpoints
 
         group.MapGet("/", GetAllEnrollments)
             .WithName("GetAllEnrollments")
-            .WithSummary("Get all enrollments")
-            .Produces<IEnumerable<EnrollmentDto>>(200)
+            .WithSummary("Get all enrollments with search and pagination")
+            .Produces<PagedResult<EnrollmentDto>>(200)
             .RequireAuthorization("Teacher");
 
         group.MapGet("/{id:guid}", GetEnrollmentById)
@@ -68,11 +69,16 @@ public static class EnrollmentEndpoints
             .RequireAuthorization("Teacher");
     }
 
-    private static async Task<IResult> GetAllEnrollments(IEnrollmentService enrollmentService)
+    private static async Task<IResult> GetAllEnrollments(
+        IEnrollmentService enrollmentService,
+        string? search = null,
+        int? status = null,
+        int page = 1,
+        int pageSize = 10)
     {
         try
         {
-            var enrollments = await enrollmentService.GetAllEnrollmentsAsync();
+            var enrollments = await enrollmentService.GetAllEnrollmentsAsync(search, status, page, pageSize);
             return Results.Ok(enrollments);
         }
         catch (Exception ex)

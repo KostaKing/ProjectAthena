@@ -6,6 +6,16 @@ type UpdateEnrollmentStatusDto = components['schemas']['UpdateEnrollmentStatusDt
 type EnrollmentSummaryDto = components['schemas']['EnrollmentSummaryDto'];
 type EnrollmentReportDto = components['schemas']['EnrollmentReportDto'];
 
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 const API_BASE = '/api';
 
 class EnrollmentApiClient {
@@ -17,8 +27,19 @@ class EnrollmentApiClient {
     };
   }
 
-  async getAllEnrollments(): Promise<EnrollmentDto[]> {
-    const response = await fetch(`${API_BASE}/enrollments`, {
+  async getAllEnrollments(
+    search?: string, 
+    status?: number, 
+    page: number = 1, 
+    pageSize: number = 10
+  ): Promise<PagedResult<EnrollmentDto>> {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (status !== undefined) params.append('status', status.toString());
+    params.append('page', page.toString());
+    params.append('pageSize', pageSize.toString());
+
+    const response = await fetch(`${API_BASE}/enrollments?${params}`, {
       method: 'GET',
       headers: await this.getAuthHeaders(),
     });

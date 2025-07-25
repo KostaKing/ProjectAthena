@@ -39,31 +39,29 @@ public class UserSeeder : ISeedingService
             return;
         }
 
-        var adminFaker = new Faker<ApplicationUser>()
-            .RuleFor(u => u.Id, f => Guid.NewGuid().ToString())
-            .RuleFor(u => u.FirstName, f => f.Name.FirstName())
-            .RuleFor(u => u.LastName, f => f.Name.LastName())
-            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.FirstName, u.LastName).ToLower())
-            .RuleFor(u => u.UserName, (f, u) => u.Email)
-            .RuleFor(u => u.EmailConfirmed, f => true)
-            .RuleFor(u => u.Role, f => UserRole.Admin)
-            .RuleFor(u => u.CreatedAt, f => f.Date.PastOffset(1).UtcDateTime)
-            .RuleFor(u => u.IsActive, f => true);
-
-        var admins = adminFaker.Generate(_config.AdminCount);
-
-        foreach (var admin in admins)
+        // Create the specific admin user
+        var admin = new ApplicationUser
         {
-            var result = await _userManager.CreateAsync(admin, _config.DefaultPassword);
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(admin, "Admin");
-                _logger.LogInformation("Created admin: {Email}", admin.Email);
-            }
-            else
-            {
-                _logger.LogError("Failed to create admin {Email}: {Errors}", admin.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
+            Id = Guid.NewGuid().ToString(),
+            FirstName = "Admin",
+            LastName = "User",
+            Email = "admin@projectathena.com",
+            UserName = "admin@projectathena.com",
+            EmailConfirmed = true,
+            Role = UserRole.Admin,
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        var result = await _userManager.CreateAsync(admin, _config.DefaultPassword);
+        if (result.Succeeded)
+        {
+            await _userManager.AddToRoleAsync(admin, "Admin");
+            _logger.LogInformation("Created admin: {Email}", admin.Email);
+        }
+        else
+        {
+            _logger.LogError("Failed to create admin {Email}: {Errors}", admin.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
         }
     }
 
@@ -75,32 +73,60 @@ public class UserSeeder : ISeedingService
             return;
         }
 
+        // Create the main teacher user (for easy login)
+        var mainTeacher = new ApplicationUser
+        {
+            Id = Guid.NewGuid().ToString(),
+            FirstName = "Teacher",
+            LastName = "User",
+            Email = "teacher@projectathena.com",
+            UserName = "teacher@projectathena.com",
+            EmailConfirmed = true,
+            Role = UserRole.Teacher,
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        var result = await _userManager.CreateAsync(mainTeacher, _config.DefaultPassword);
+        if (result.Succeeded)
+        {
+            await _userManager.AddToRoleAsync(mainTeacher, "Teacher");
+            _logger.LogInformation("Created main teacher: {Email}", mainTeacher.Email);
+        }
+        else
+        {
+            _logger.LogError("Failed to create main teacher {Email}: {Errors}", mainTeacher.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
+        // Create additional realistic teacher users using Faker
         var teacherFaker = new Faker<ApplicationUser>()
             .RuleFor(u => u.Id, f => Guid.NewGuid().ToString())
             .RuleFor(u => u.FirstName, f => f.Name.FirstName())
             .RuleFor(u => u.LastName, f => f.Name.LastName())
-            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.FirstName, u.LastName).ToLower())
+            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.FirstName, u.LastName, "projectathena.com"))
             .RuleFor(u => u.UserName, (f, u) => u.Email)
             .RuleFor(u => u.EmailConfirmed, f => true)
             .RuleFor(u => u.Role, f => UserRole.Teacher)
-            .RuleFor(u => u.CreatedAt, f => f.Date.PastOffset(2).UtcDateTime)
+            .RuleFor(u => u.CreatedAt, f => f.Date.PastOffset(1).UtcDateTime)
             .RuleFor(u => u.IsActive, f => true);
 
-        var teachers = teacherFaker.Generate(_config.TeacherCount);
+        var additionalTeachers = teacherFaker.Generate(_config.TeacherCount - 1); // -1 because we already created the main teacher
 
-        foreach (var teacher in teachers)
+        foreach (var teacher in additionalTeachers)
         {
-            var result = await _userManager.CreateAsync(teacher, _config.DefaultPassword);
-            if (result.Succeeded)
+            var createResult = await _userManager.CreateAsync(teacher, _config.DefaultPassword);
+            if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(teacher, "Teacher");
                 _logger.LogInformation("Created teacher: {Email}", teacher.Email);
             }
             else
             {
-                _logger.LogError("Failed to create teacher {Email}: {Errors}", teacher.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
+                _logger.LogError("Failed to create teacher {Email}: {Errors}", teacher.Email, string.Join(", ", createResult.Errors.Select(e => e.Description)));
             }
         }
+
+        _logger.LogInformation("Completed seeding {Count} teacher users", additionalTeachers.Count + 1);
     }
 
     private async Task SeedStudentsAsync()
@@ -111,31 +137,59 @@ public class UserSeeder : ISeedingService
             return;
         }
 
+        // Create the main student user (for easy login)
+        var mainStudent = new ApplicationUser
+        {
+            Id = Guid.NewGuid().ToString(),
+            FirstName = "Student",
+            LastName = "User",
+            Email = "student@projectathena.com",
+            UserName = "student@projectathena.com",
+            EmailConfirmed = true,
+            Role = UserRole.Student,
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        var result = await _userManager.CreateAsync(mainStudent, _config.DefaultPassword);
+        if (result.Succeeded)
+        {
+            await _userManager.AddToRoleAsync(mainStudent, "Student");
+            _logger.LogInformation("Created main student: {Email}", mainStudent.Email);
+        }
+        else
+        {
+            _logger.LogError("Failed to create main student {Email}: {Errors}", mainStudent.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
+        // Create additional realistic student users using Faker
         var studentFaker = new Faker<ApplicationUser>()
             .RuleFor(u => u.Id, f => Guid.NewGuid().ToString())
             .RuleFor(u => u.FirstName, f => f.Name.FirstName())
             .RuleFor(u => u.LastName, f => f.Name.LastName())
-            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.FirstName, u.LastName).ToLower())
+            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.FirstName, u.LastName, "projectathena.com"))
             .RuleFor(u => u.UserName, (f, u) => u.Email)
             .RuleFor(u => u.EmailConfirmed, f => true)
             .RuleFor(u => u.Role, f => UserRole.Student)
-            .RuleFor(u => u.CreatedAt, f => f.Date.PastOffset(3).UtcDateTime)
+            .RuleFor(u => u.CreatedAt, f => f.Date.PastOffset(1).UtcDateTime)
             .RuleFor(u => u.IsActive, f => true);
 
-        var students = studentFaker.Generate(_config.StudentCount);
+        var additionalStudents = studentFaker.Generate(_config.StudentCount - 1); // -1 because we already created the main student
 
-        foreach (var student in students)
+        foreach (var student in additionalStudents)
         {
-            var result = await _userManager.CreateAsync(student, _config.DefaultPassword);
-            if (result.Succeeded)
+            var createResult = await _userManager.CreateAsync(student, _config.DefaultPassword);
+            if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(student, "Student");
                 _logger.LogInformation("Created student: {Email}", student.Email);
             }
             else
             {
-                _logger.LogError("Failed to create student {Email}: {Errors}", student.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
+                _logger.LogError("Failed to create student {Email}: {Errors}", student.Email, string.Join(", ", createResult.Errors.Select(e => e.Description)));
             }
         }
+
+        _logger.LogInformation("Completed seeding {Count} student users", additionalStudents.Count + 1);
     }
 }

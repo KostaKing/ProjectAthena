@@ -5,7 +5,6 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { courseApi, type CourseDto, type CreateCourseDto, type UpdateCourseDto } from '../../services/courseApi';
-import { authApi } from '../../services/authApi';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, X } from 'lucide-react';
 
@@ -84,7 +83,7 @@ export function CourseForm({ course, onClose }: CourseFormProps) {
           maxEnrollments: formData.maxEnrollments,
         };
         
-        await courseApi.updateCourse(course.id, updateData);
+        await courseApi.updateCourse(course.id!, updateData);
         toast.success('Course updated successfully');
       } else {
         const createData: CreateCourseDto = {

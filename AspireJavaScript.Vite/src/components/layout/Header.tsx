@@ -51,9 +51,9 @@ export function Header() {
                     <span className="text-gray-700">{user.fullName}</span>
                   </div>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role!)}`}
                   >
-                    {getRoleName(user.role)}
+                    {getRoleName(user.role!)}
                   </span>
                 </div>
 

@@ -118,18 +118,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         role: response.user.role as UserRole,
         fullName: response.user.fullName,
         isActive: response.user.isActive,
-        createdAt: response.user.createdAt.toString(),
+        createdAt: response.user.createdAt?.toString(),
         lastLoginAt: response.user.lastLoginAt?.toString(),
       };
 
-      storeAuthData(user, response.token, response.refreshToken);
+      storeAuthData(user, response.token!, response.refreshToken!);
       
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: {
           user,
-          token: response.token,
-          refreshToken: response.refreshToken,
+          token: response.token!,
+          refreshToken: response.refreshToken!,
         },
       });
 
@@ -152,10 +152,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       dispatch({ type: 'LOGIN_START' });
 
-      const user = await authApi.register(data);
+      await authApi.register(data);
       
       // After registration, automatically log the user in
-      await login(data.email, data.password);
+      await login(data.email!, data.password!);
 
       toast({
         title: "Registration successful",
@@ -205,17 +205,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         role: response.user.role as UserRole,
         fullName: response.user.fullName,
         isActive: response.user.isActive,
-        createdAt: response.user.createdAt.toString(),
+        createdAt: response.user.createdAt?.toString(),
         lastLoginAt: response.user.lastLoginAt?.toString(),
       };
 
-      storeAuthData(user, response.token, response.refreshToken);
+      storeAuthData(user, response.token!, response.refreshToken!);
       
       dispatch({
         type: 'REFRESH_TOKEN_SUCCESS',
         payload: {
-          token: response.token,
-          refreshToken: response.refreshToken,
+          token: response.token!,
+          refreshToken: response.refreshToken!,
         },
       });
 

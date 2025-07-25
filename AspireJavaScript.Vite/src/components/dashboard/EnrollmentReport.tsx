@@ -34,10 +34,10 @@ export function EnrollmentReport({ courseId, onClose }: EnrollmentReportProps) {
 
   const getStatusBadge = (status: EnrollmentStatus) => {
     const variants = {
-      [EnrollmentStatus.Active]: { variant: 'default' as const, label: 'Active' },
-      [EnrollmentStatus.Completed]: { variant: 'secondary' as const, label: 'Completed' },
-      [EnrollmentStatus.Dropped]: { variant: 'destructive' as const, label: 'Dropped' },
-      [EnrollmentStatus.Suspended]: { variant: 'outline' as const, label: 'Suspended' },
+      [EnrollmentStatus.Value1]: { variant: 'default' as const, label: 'Active' },
+      [EnrollmentStatus.Value2]: { variant: 'secondary' as const, label: 'Completed' },
+      [EnrollmentStatus.Value3]: { variant: 'destructive' as const, label: 'Dropped' },
+      [EnrollmentStatus.Value4]: { variant: 'outline' as const, label: 'Suspended' },
     };
     
     const config = variants[status];

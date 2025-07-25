@@ -5,8 +5,7 @@ export const useToast = () => {
     toast: ({
       title,
       description,
-      variant = "default",
-      ...props
+      variant = "default"
     }: {
       title?: string
       description?: string

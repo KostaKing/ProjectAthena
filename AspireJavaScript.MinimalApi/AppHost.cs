@@ -87,6 +87,7 @@ builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddMemoryCache();
 
 // Add FluentValidation
@@ -153,6 +154,9 @@ app.MapEnrollmentEndpoints();
 // Map student and teacher endpoints
 app.MapStudentEndpoints();
 app.MapTeacherEndpoints();
+
+// Map dashboard endpoints
+app.MapDashboardEndpoints();
 
 
 app.Run();

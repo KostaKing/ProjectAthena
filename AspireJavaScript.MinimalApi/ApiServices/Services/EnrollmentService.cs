@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectAthena.Data.Models;
 using ProjectAthena.Data.Persistence;
 using ProjectAthena.Dtos.Enrollments;
+using ProjectAthena.Dtos.Common;
 using ProjectAthena.Dtos.Mappings;
 
 namespace AspireJavaScript.MinimalApi.ApiServices.Services;
@@ -18,22 +19,53 @@ public class EnrollmentService : IEnrollmentService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<EnrollmentDto>> GetAllEnrollmentsAsync()
+    public async Task<PagedResult<EnrollmentDto>> GetAllEnrollmentsAsync(string? search = null, int? status = null, int page = 1, int pageSize = 10)
     {
         try
         {
-            var enrollments = await _context.Enrollments
+            var query = _context.Enrollments
                 .Include(e => e.Student)
+                    .ThenInclude(s => s.User)
                 .Include(e => e.Course)
-                .Where(e => e.IsActive)
+                .Where(e => e.IsActive);
+
+            // Apply search filter
+            if (!string.IsNullOrEmpty(search))
+            {
+                var searchLower = search.ToLower();
+                query = query.Where(e => 
+                    e.Student.User.FirstName.ToLower().Contains(searchLower) ||
+                    e.Student.User.LastName.ToLower().Contains(searchLower) ||
+                    e.Student.User.Email.ToLower().Contains(searchLower) ||
+                    e.Course.Title.ToLower().Contains(searchLower) ||
+                    e.Course.CourseCode.ToLower().Contains(searchLower));
+            }
+
+            // Apply status filter
+            if (status.HasValue)
+            {
+                query = query.Where(e => e.Status == (EnrollmentStatus)status.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+            
+            var enrollments = await query
                 .OrderBy(e => e.EnrollmentDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return enrollments.Select(e => e.ToDto());
+            return new PagedResult<EnrollmentDto>
+            {
+                Items = enrollments.Select(e => e.ToDto()),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving all enrollments");
+            _logger.LogError(ex, "Error retrieving enrollments with search: {Search}, status: {Status}", search, status);
             throw;
         }
     }
@@ -88,6 +120,7 @@ public class EnrollmentService : IEnrollmentService
         {
             var enrollment = await _context.Enrollments
                 .Include(e => e.Student)
+                    .ThenInclude(s => s.User)
                 .Include(e => e.Course)
                 .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 

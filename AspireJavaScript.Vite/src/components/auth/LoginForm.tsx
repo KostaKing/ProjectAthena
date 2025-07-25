@@ -65,8 +65,8 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const handleDemoFill = (role: 'admin' | 'teacher' | 'student') => {
     const demoCredentials = {
       admin: { email: 'admin@projectathena.com', password: 'Admin123!' },
-      teacher: { email: 'teacher@projectathena.com', password: 'Teacher123!' },
-      student: { email: 'student@projectathena.com', password: 'Student123!' },
+      teacher: { email: 'teacher@projectathena.com', password: 'Admin123!' },
+      student: { email: 'student@projectathena.com', password: 'Admin123!' },
     };
 
     const credentials = demoCredentials[role];
@@ -157,39 +157,50 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or try demo accounts
+              Quick Demo Login
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDemoFill('admin')}
-            disabled={isLoading}
-            className="text-xs"
-          >
-            Admin
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDemoFill('teacher')}
-            disabled={isLoading}
-            className="text-xs"
-          >
-            Teacher
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDemoFill('student')}
-            disabled={isLoading}
-            className="text-xs"
-          >
-            Student
-          </Button>
+        <div className="space-y-2">
+          <p className="text-xs text-center text-muted-foreground">
+            Click to auto-fill credentials for demo accounts
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDemoFill('admin')}
+              disabled={isLoading}
+              className="text-xs hover:bg-blue-50 hover:border-blue-300"
+              title="admin@projectathena.com"
+            >
+              👨‍💼 Admin
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDemoFill('teacher')}
+              disabled={isLoading}
+              className="text-xs hover:bg-green-50 hover:border-green-300"
+              title="teacher@projectathena.com"
+            >
+              👩‍🏫 Teacher
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDemoFill('student')}
+              disabled={isLoading}
+              className="text-xs hover:bg-purple-50 hover:border-purple-300"
+              title="student@projectathena.com"
+            >
+              👨‍🎓 Student
+            </Button>
+          </div>
+          <p className="text-xs text-center text-muted-foreground">
+            All demo accounts use password: <code className="bg-gray-100 px-1 rounded">Admin123!</code>
+          </p>
         </div>
       </CardContent>
       <CardFooter>
