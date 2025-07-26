@@ -1,6 +1,7 @@
 using AspireJavaScript.MinimalApi.ApiServices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using ProjectAthena.Dtos.Courses;
+using System.Diagnostics;
 
 namespace AspireJavaScript.MinimalApi.Endpoints;
 
@@ -62,9 +63,14 @@ public static class CourseEndpoints
         catch (Exception ex)
         {
             return Results.Problem(
+                statusCode: 500,
                 title: "Error retrieving courses",
-                detail: ex.Message,
-                statusCode: 500);
+                detail: "An error occurred while retrieving courses",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 
@@ -78,9 +84,14 @@ public static class CourseEndpoints
         catch (Exception ex)
         {
             return Results.Problem(
+                statusCode: 500,
                 title: "Error retrieving course",
-                detail: ex.Message,
-                statusCode: 500);
+                detail: "An error occurred while retrieving the course",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 
@@ -94,9 +105,14 @@ public static class CourseEndpoints
         catch (Exception ex)
         {
             return Results.Problem(
+                statusCode: 500,
                 title: "Error retrieving course",
-                detail: ex.Message,
-                statusCode: 500);
+                detail: "An error occurred while retrieving the course",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 
@@ -109,14 +125,22 @@ public static class CourseEndpoints
         }
         catch (InvalidOperationException ex)
         {
-            return Results.BadRequest(ex.Message);
+            return Results.Problem(
+                statusCode: 400,
+                title: "Course creation failed",
+                detail: ex.Message);
         }
         catch (Exception ex)
         {
             return Results.Problem(
+                statusCode: 500,
                 title: "Error creating course",
-                detail: ex.Message,
-                statusCode: 500);
+                detail: "An error occurred while creating the course",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 
@@ -130,9 +154,14 @@ public static class CourseEndpoints
         catch (Exception ex)
         {
             return Results.Problem(
+                statusCode: 500,
                 title: "Error updating course",
-                detail: ex.Message,
-                statusCode: 500);
+                detail: "An error occurred while updating the course",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 
@@ -146,9 +175,14 @@ public static class CourseEndpoints
         catch (Exception ex)
         {
             return Results.Problem(
+                statusCode: 500,
                 title: "Error deleting course",
-                detail: ex.Message,
-                statusCode: 500);
+                detail: "An error occurred while deleting the course",
+                extensions: new Dictionary<string, object?> 
+                {
+                    ["traceId"] = Activity.Current?.Id,
+                    ["timestamp"] = DateTime.UtcNow
+                });
         }
     }
 }
