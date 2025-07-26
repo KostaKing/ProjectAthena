@@ -27,9 +27,9 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 | **Database** | PostgreSQL with Entity Framework Core |
 | **Authentication** | ASP.NET Core Identity + JWT Bearer |
 | **Validation** | FluentValidation with endpoint integration |
-| **Frontend** | React 18 with TypeScript + auto-generated types |
+| **Frontend** | React 19 with TypeScript + auto-generated types |
 | **Build Tool** | Vite with HMR and TypeScript support |
-| **Styling** | Tailwind CSS with component library |
+| **Styling** | Tailwind CSS with shadcn/ui component library |
 | **Orchestration** | .NET Aspire with service discovery |
 | **Database Admin** | pgAdmin with Docker integration |
 | **Testing** | xUnit with comprehensive integration tests |
@@ -72,32 +72,18 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for PostgreSQL)
-- [Node.js 20+](https://nodejs.org) (for React frontend)
+- [Node.js 20+](https://nodejs.org)
 - **Optional**: [Visual Studio 2022 17.12+](https://visualstudio.microsoft.com/vs/)
 
 ### Local Development Setup
 
 1. **Clone the Repository**
    ```bash
-   git clone <repository-url>
-   cd AspireWithJavaScript
+   git clone https://github.com/KostaKing/ProjectAthena
+   cd ProjectAthena
    ```
 
-2. **Install Frontend Dependencies**
-   ```bash
-   cd AspireJavaScript.Vite
-   npm install
-   cd ..
-   ```
-
-3. **Configure Database Connection**
-   
-   The application uses PostgreSQL via Docker. Default credentials:
-   - **Username**: `postgres`
-   - **Password**: `mypassword123`
-   - **Database**: `ProjectAthenaDB`
-
-4. **Run the Application**
+2. **Run the Application**
 
    **Option A: Visual Studio**
    - Open `ProjectAthena.sln`
@@ -110,7 +96,7 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
    dotnet run
    ```
 
-5. **Access the Application**
+3. **Access the Application**
    - **.NET Aspire Dashboard**: Auto-launches in browser
    - **React Frontend**: Available through Aspire dashboard
    - **API Documentation**: Swagger UI available in development
@@ -125,53 +111,36 @@ The `ProjectAthena.DbWorkerService` automatically:
   - Sample courses and instructors
   - Test students and enrollments
 
-## 👥 User Roles
-
-### **Admin**
-- Full system access
-- User management (activate/deactivate)
-- Course management (CRUD operations)
-- Enrollment management
-- System reporting
-
-### **Teacher**
-- View assigned courses
-- Manage course enrollments
-- Update student grades
-- Generate course reports
-- View student information
-
-### **Student**
-- View personal enrollments
-- Check course information
-- View grades and progress
-- Update personal profile
-
 ## 🎯 Key Features
 
-### **Course Management**
-- Create, update, and manage courses
-- Set enrollment limits and schedules
-- Assign instructors to courses
-- Track course capacity and availability
+### **Advanced Admin Dashboard**
+- **Real-time Analytics**: Live dashboard with completion rates, average grades, and enrollment metrics
+- **Student-Teacher Ratio**: Automatic calculation and optimization recommendations
+- **Activity Monitoring**: Recent system activities with detailed timestamps
+- **Performance Indicators**: Color-coded metrics for quick assessment
+- **Interactive Charts**: Visual representations of course and enrollment data
 
-### **Student Enrollment**
-- Enroll students in courses
-- Track enrollment status (Active, Completed, Dropped, Suspended)
-- Manage course capacity constraints
-- Prevent duplicate enrollments
+### **Comprehensive Course Management**
+- **Course Creation**: Full CRUD operations with enrollment limits and schedules
+- **Instructor Assignment**: Link courses to qualified instructors
+- **Capacity Tracking**: Real-time enrollment monitoring with visual indicators
+- **Status Management**: Track active, upcoming, and completed courses
+- **Search & Filtering**: Advanced filtering by status, enrollment level, instructor
 
-### **Reporting System**
-- Advanced enrollment reports with filtering
-- Course performance analytics
-- Student progress tracking
-- Exportable report formats
+### **Advanced Reporting System**
+- **Multi-dimensional Reports**: Group by course, student, instructor, status, or date
+- **Advanced Filtering**: Date ranges, grade ranges, status filters, course-specific reports
+- **Real-time Validation**: Client-side validation with immediate feedback
+- **Export Capabilities**: CSV export with PDF export (coming soon)
+- **Performance Analytics**: Average grades, completion rates, enrollment trends
+- **Visual Summaries**: Progress bars, status badges, and enrollment statistics
 
 ### **User Management**
-- Role-based access control
-- Account activation/deactivation
-- Password management
-- Profile management
+- **Role-based Access Control**: Admin, Teacher, Student roles with appropriate permissions
+- **Account Management**: Activate/deactivate users with confirmation dialogs
+- **User Directory**: Searchable user list with sorting and filtering
+- **Status Tracking**: Monitor active/inactive users with visual indicators
+- **Batch Operations**: Manage multiple users efficiently
 
 ## 🔧 API Endpoints
 
@@ -193,6 +162,7 @@ The `ProjectAthena.DbWorkerService` automatically:
 - `POST /api/enrollments` - Create enrollment (Admin)
 - `GET /api/enrollments/student/{id}` - Get student enrollments
 - `GET /api/enrollments/course/{id}` - Get course enrollments
+- `POST /api/enrollments/reports/advanced` - Generate advanced reports
 
 ## 🧪 Testing
 
@@ -252,18 +222,6 @@ ProjectAthena/
 ├── ProjectAthena.DbWorkerService/      # Database seeding service
 └── ProjectAthena.Tests/                # Integration tests
 ```
-
-## 🤝 Contributing
-
-1. Follow the established coding patterns
-2. Ensure all tests pass before submitting
-3. Use consistent error handling patterns
-4. Add appropriate logging for new features
-5. Update documentation for API changes
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
