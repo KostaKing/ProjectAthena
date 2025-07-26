@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using ProjectAthena.Data.Models;
 using ProjectAthena.Data.Persistence;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,15 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // Add JWT Authentication
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "ProjectAthena-SuperSecretKey-ForDevelopment-MinimumLength32Characters!";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ProjectAthena.Api";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "ProjectAthena.Client";
+
+// Log JWT configuration for debugging
+var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger("JwtConfig");
+logger.LogInformation("JWT Configuration - Issuer: {Issuer}, Audience: {Audience}, SecretKey Length: {KeyLength}", 
+    jwtIssuer, jwtAudience, jwtSecretKey.Length);
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -64,11 +74,71 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured"))),
-        ClockSkew = TimeSpan.Zero
+        RequireSignedTokens = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+        ClockSkew = TimeSpan.FromMinutes(5)
+    };
+    
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError("JWT Authentication failed: {Exception}", context.Exception?.Message);
+            logger.LogError("JWT Token: {Token}", context.Request.Headers.Authorization.FirstOrDefault());
+            logger.LogError("JWT Exception Details: {ExceptionType} - {InnerException}", 
+                context.Exception?.GetType().Name, context.Exception?.InnerException?.Message);
+            logger.LogError("JWT Full Exception: {FullException}", context.Exception?.ToString());
+            
+            // Log validation parameters for debugging
+            var validationParams = context.Options.TokenValidationParameters;
+            logger.LogError("JWT Validation Config - ValidateIssuer: {ValidateIssuer}, ValidIssuer: {ValidIssuer}", 
+                validationParams.ValidateIssuer, validationParams.ValidIssuer);
+            logger.LogError("JWT Validation Config - ValidateAudience: {ValidateAudience}, ValidAudience: {ValidAudience}", 
+                validationParams.ValidateAudience, validationParams.ValidAudience);
+            logger.LogError("JWT Validation Config - ValidateLifetime: {ValidateLifetime}, ValidateIssuerSigningKey: {ValidateIssuerSigningKey}", 
+                validationParams.ValidateLifetime, validationParams.ValidateIssuerSigningKey);
+            
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("JWT Token validated successfully for user: {User}", 
+                context.Principal?.Identity?.Name ?? "Unknown");
+            return Task.CompletedTask;
+        },
+        OnMessageReceived = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            
+            // Check for test token header first (for Aspire testing)
+            if (context.Request.Headers.TryGetValue("X-Test-Authorization", out var testToken))
+            {
+                context.Token = testToken.ToString().Replace("Bearer ", "");
+                logger.LogInformation("Using test authorization header");
+            }
+            
+            var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+            logger.LogInformation("Authorization Header: {AuthHeader}", authHeader ?? "NULL");
+            logger.LogInformation("JWT Token received: {Token}", context.Token?.Substring(0, Math.Min(50, context.Token?.Length ?? 0)) + "...");
+            
+            // Log if token is null or empty
+            if (string.IsNullOrEmpty(context.Token))
+            {
+                logger.LogWarning("JWT Token is null or empty!");
+            }
+            
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError("JWT Challenge triggered: {Error}, {ErrorDescription}", context.Error, context.ErrorDescription);
+            return Task.CompletedTask;
+        }
     };
 });
 

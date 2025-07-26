@@ -18,7 +18,11 @@
       "Bash(./node_modules/.bin/tailwindcss:*)",
       "Bash(dotnet build)",
       "Bash(dotnet ef migrations:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "WebFetch(domain:aws.amazon.com)",
+      "Bash(dotnet test:*)",
+      "Bash(docker container prune:*)",
+      "Bash(del ProjectAthena.TestsJwtDebugTest.cs)"
     ],
     "deny": []
   }

@@ -38,7 +38,7 @@ public class TokenService : ITokenService
             new(ClaimTypes.Email, user.Email!),
             new(ClaimTypes.GivenName, user.FirstName),
             new(ClaimTypes.Surname, user.LastName),
-            new("role", user.Role.ToString()),
+            new(ClaimTypes.Role, user.Role.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.Iat, 
                 new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(), 

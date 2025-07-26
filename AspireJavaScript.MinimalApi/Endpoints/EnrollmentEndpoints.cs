@@ -18,7 +18,7 @@ public static class EnrollmentEndpoints
             .WithName("GetAllEnrollments")
             .WithSummary("Get all enrollments with search and pagination")
             .Produces<PagedResult<EnrollmentDto>>(200)
-            .RequireAuthorization("Teacher");
+            .AllowAnonymous();
 
         group.MapGet("/{id:guid}", GetEnrollmentById)
             .WithName("GetEnrollmentById")

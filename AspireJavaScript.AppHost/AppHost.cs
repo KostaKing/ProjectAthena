@@ -10,7 +10,6 @@ var ProjectAthenaDB = postgres.AddDatabase("ProjectAthenaDB");
 var ngrokAuthToken = builder.AddParameter("ngrok-auth-token", "2zg42YIX4zF8cSEjmsq70MuxIzj_6FKWxijKnH7ZeGL5rUK6t", secret: true);
 var dbService = builder.AddProject<Projects.ProjectAthena_DbWorkerService>("ProjectAthena-DbWorkerService").WithReference(ProjectAthenaDB).WaitFor(ProjectAthenaDB);
 
-
 var projectAthenaApi = builder.AddProject<Projects.ProjectAthena_MinimalApi>("ProjectAthenaApi")
     .WithExternalHttpEndpoints()
     .WaitForCompletion(dbService)

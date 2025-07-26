@@ -20,7 +20,7 @@ public class Worker(
     private static readonly ActivitySource s_activitySource = new(ActivitySourceName);
 
     // Database deletion control
-    private const bool DELETE_DATABASE_ON_STARTUP = true; // Set to true to clean start
+    private const bool DELETE_DATABASE_ON_STARTUP = false; // Set to true to clean start
 
     private bool ShouldDeleteDatabase =>
         configuration.GetValue<bool>("Migration:DeleteDatabaseOnStartup", DELETE_DATABASE_ON_STARTUP);
