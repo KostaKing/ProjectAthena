@@ -60,7 +60,7 @@ public static class CourseEndpoints
             var courses = await courseService.GetAllCoursesAsync();
             return Results.Ok(courses);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -81,7 +81,7 @@ public static class CourseEndpoints
             var course = await courseService.GetCourseByIdAsync(id);
             return course != null ? Results.Ok(course) : Results.NotFound($"Course with ID {id} not found.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -102,7 +102,7 @@ public static class CourseEndpoints
             var course = await courseService.GetCourseByCodeAsync(courseCode);
             return course != null ? Results.Ok(course) : Results.NotFound($"Course with code {courseCode} not found.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -130,7 +130,7 @@ public static class CourseEndpoints
                 title: "Course creation failed",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -151,7 +151,7 @@ public static class CourseEndpoints
             var course = await courseService.UpdateCourseAsync(id, updateCourseDto);
             return course != null ? Results.Ok(course) : Results.NotFound($"Course with ID {id} not found.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -172,7 +172,7 @@ public static class CourseEndpoints
             var deleted = await courseService.DeleteCourseAsync(id);
             return deleted ? Results.NoContent() : Results.NotFound($"Course with ID {id} not found.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,

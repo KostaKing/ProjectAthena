@@ -8,8 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Label } from '../ui/label';
 import { courseApi, type CourseDto } from '../../services/courseApi';
-import { enrollmentApi, type EnrollmentDto, EnrollmentStatus, type CreateEnrollmentDto } from '../../services/enrollmentApi';
-import { authApi, type UserDto } from '../../services/authApi';
+import { enrollmentApi, type EnrollmentDto, EnrollmentStatus } from '../../services/enrollmentApi';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -17,7 +16,6 @@ import {
   GraduationCap, 
   Calendar, 
   BookOpen, 
-  UserPlus, 
   Search, 
   Mail,
   Edit,
@@ -41,12 +39,9 @@ interface CourseDetailViewProps {
 export function CourseDetailView({ courseId, onBack }: CourseDetailViewProps) {
   const [course, setCourse] = useState<CourseDto | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollmentDto[]>([]);
-  const [allUsers, setAllUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all');
-  const [showAddStudent, setShowAddStudent] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [activeTab, setActiveTab] = useState('overview');
   const [showEditCourse, setShowEditCourse] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -60,7 +55,6 @@ export function CourseDetailView({ courseId, onBack }: CourseDetailViewProps) {
 
   useEffect(() => {
     fetchCourseData();
-    fetchAllUsers();
   }, [courseId]);
 
   useEffect(() => {
@@ -93,40 +87,6 @@ export function CourseDetailView({ courseId, onBack }: CourseDetailViewProps) {
     }
   };
 
-  const fetchAllUsers = async () => {
-    try {
-      const users = await authApi.getAllUsers();
-      // Filter to only student users (assuming role Value1 = Student)
-      const students = users.filter((user: any) => user.role === 1); // UserRole.Value1
-      setAllUsers(students);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
-
-  const handleAddStudent = async () => {
-    if (!selectedUserId) {
-      toast.error('Please select a student');
-      return;
-    }
-
-    try {
-      const enrollmentData: CreateEnrollmentDto = {
-        studentId: selectedUserId,
-        courseId: courseId,
-        enrollmentDate: new Date().toISOString()
-      };
-
-      await enrollmentApi.createEnrollment(enrollmentData);
-      toast.success('Student enrolled successfully');
-      setShowAddStudent(false);
-      setSelectedUserId('');
-      fetchCourseData(); // Refresh the data
-    } catch (error) {
-      toast.error('Failed to enroll student');
-      console.error('Error:', error);
-    }
-  };
 
   const handleStatusChange = async (enrollmentId: string, newStatus: EnrollmentStatus) => {
     try {
@@ -135,7 +95,12 @@ export function CourseDetailView({ courseId, onBack }: CourseDetailViewProps) {
         grade: null 
       });
       toast.success('Status updated successfully');
-      fetchCourseData();
+      // Update local state instead of refetching to prevent auto-refresh
+      setEnrollments(prev => prev.map(enrollment => 
+        enrollment.id === enrollmentId 
+          ? { ...enrollment, status: newStatus }
+          : enrollment
+      ));
     } catch (error) {
       toast.error('Failed to update status');
       console.error('Error:', error);
@@ -289,46 +254,6 @@ export function CourseDetailView({ courseId, onBack }: CourseDetailViewProps) {
             <p className="text-muted-foreground">{course.courseCode}</p>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <Dialog open={showAddStudent} onOpenChange={setShowAddStudent}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Student to Course</DialogTitle>
-                <DialogDescription>
-                  Select a student to enroll in {course.title}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allUsers.map((user) => (
-                      <SelectItem key={user.id} value={user.id!}>
-                        {user.fullName} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowAddStudent(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddStudent}>
-                  Add Student
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
       </div>
 
       {/* Course Overview Cards */}
@@ -473,10 +398,6 @@ export function CourseDetailView({ courseId, onBack }: CourseDetailViewProps) {
                         ? 'No students match your search criteria.' 
                         : 'No students enrolled in this course yet.'}
                     </p>
-                    <Button onClick={() => setShowAddStudent(true)}>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Add Student
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

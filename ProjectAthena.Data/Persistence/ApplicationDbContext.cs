@@ -125,7 +125,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .OnDelete(DeleteBehavior.Cascade);
             
             entity.HasIndex(e => new { e.StudentId, e.CourseId })
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("\"IsActive\" = true");
         });
 
         // Configure Student

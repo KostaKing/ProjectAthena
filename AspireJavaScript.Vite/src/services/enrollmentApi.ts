@@ -95,6 +95,13 @@ export interface PagedResult<T> {
   hasPreviousPage: boolean;
 }
 
+export interface EnrollmentCheckDto {
+  studentId: string;
+  courseId: string;
+  isCurrentlyEnrolled: boolean;
+  hasEverEnrolled: boolean;
+}
+
 const API_BASE = '/api';
 
 class EnrollmentApiClient {
@@ -241,8 +248,28 @@ class EnrollmentApiClient {
 
     return response.json();
   }
+
+  async checkEnrollmentStatus(studentId: string, courseId: string): Promise<EnrollmentCheckDto> {
+    const response = await fetch(`${API_BASE}/enrollments/check/${studentId}/${courseId}`, {
+      method: 'GET',
+      headers: await this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to check enrollment status');
+    }
+
+    return response.json();
+  }
 }
 
 export const enrollmentApi = new EnrollmentApiClient();
 export { EnrollmentStatus };
-export type { EnrollmentDto, CreateEnrollmentDto, UpdateEnrollmentStatusDto, EnrollmentSummaryDto, EnrollmentReportDto };
+export type { 
+  EnrollmentDto, 
+  CreateEnrollmentDto, 
+  UpdateEnrollmentStatusDto, 
+  EnrollmentSummaryDto, 
+  EnrollmentReportDto
+};

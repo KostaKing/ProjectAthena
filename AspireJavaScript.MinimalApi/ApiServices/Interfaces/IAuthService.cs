@@ -14,4 +14,5 @@ public interface IAuthService
     Task<List<UserDto>> GetAllUsersAsync();
     Task<UserDto> ActivateUserAsync(string userId);
     Task<UserDto> DeactivateUserAsync(string userId);
+    Task DeleteUserAsync(string userId);
 }

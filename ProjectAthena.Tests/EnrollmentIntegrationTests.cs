@@ -57,6 +57,9 @@ public class EnrollmentIntegrationTests
         var firstStudent = studentsData.RootElement.EnumerateArray().Skip(1).First(); // Use second student to avoid conflicts
         var studentId = firstStudent.GetProperty("id").GetString()!;
         
+        // Clean up existing enrollments for this student first
+        await CleanupStudentEnrollments(studentId, adminToken);
+        
         // Use the CreateTestEnrollment method which handles conflicts automatically
         var enrollmentId = await CreateTestEnrollment(studentId);
         
@@ -258,6 +261,13 @@ public class EnrollmentIntegrationTests
         var studentsData = JsonDocument.Parse(studentsJson);
         var students = studentsData.RootElement.EnumerateArray().Take(3).ToList();
         
+        // Clean up existing enrollments for these students first
+        for (int i = 0; i < students.Count; i++)
+        {
+            var studentId = students[i].GetProperty("id").GetString()!;
+            await CleanupStudentEnrollments(studentId, adminToken);
+        }
+        
         for (int i = 0; i < students.Count; i++)
         {
             var studentId = students[i].GetProperty("id").GetString()!;
@@ -314,11 +324,32 @@ public class EnrollmentIntegrationTests
         var coursesData = JsonDocument.Parse(coursesJson);
         var courses = coursesData.RootElement.EnumerateArray().ToList();
         
+        // First, try to get existing enrollments for this student to avoid duplicates
+        var enrollmentsResponse = await _httpClient.GetWithAuthAsync($"/api/enrollments/student/{studentId}", adminToken);
+        var existingEnrollments = new HashSet<Guid>();
+        if (enrollmentsResponse.IsSuccessStatusCode)
+        {
+            var enrollmentsJson = await enrollmentsResponse.Content.ReadAsStringAsync();
+            var enrollmentsData = JsonDocument.Parse(enrollmentsJson);
+            foreach (var enrollment in enrollmentsData.RootElement.EnumerateArray())
+            {
+                var courseIdProp = enrollment.GetProperty("courseId").GetString();
+                if (Guid.TryParse(courseIdProp, out var courseId))
+                {
+                    existingEnrollments.Add(courseId);
+                }
+            }
+        }
+        
         // Try different courses until we find one where the student isn't already enrolled
         foreach (var course in courses)
         {
             var courseId = Guid.Parse(course.GetProperty("id").GetString()!);
             
+            // Skip if student is already enrolled in this course
+            if (existingEnrollments.Contains(courseId))
+                continue;
+                
             var createEnrollmentDto = new CreateEnrollmentDto
             {
                 StudentId = studentId,
@@ -334,10 +365,39 @@ public class EnrollmentIntegrationTests
                 var enrollment = JsonSerializer.Deserialize<EnrollmentDto>(content, _jsonOptions);
                 return enrollment!.Id;
             }
-            // If this course didn't work (student already enrolled), try the next one
+            // If this course didn't work for other reasons (capacity, etc.), try the next one
         }
         
-        throw new InvalidOperationException("Could not create enrollment - student may already be enrolled in all available courses");
+        throw new InvalidOperationException($"Could not create enrollment for student {studentId} - no available courses found (checked {courses.Count} courses, student already enrolled in {existingEnrollments.Count})");
+    }
+
+    private async Task CleanupStudentEnrollments(string studentId, string adminToken)
+    {
+        try
+        {
+            // Get all enrollments for this student
+            var enrollmentsResponse = await _httpClient.GetWithAuthAsync($"/api/enrollments/student/{studentId}", adminToken);
+            if (!enrollmentsResponse.IsSuccessStatusCode)
+                return; // No enrollments found, which is fine
+                
+            var enrollmentsJson = await enrollmentsResponse.Content.ReadAsStringAsync();
+            var enrollmentsData = JsonDocument.Parse(enrollmentsJson);
+            
+            // Delete each enrollment
+            foreach (var enrollment in enrollmentsData.RootElement.EnumerateArray())
+            {
+                var enrollmentId = enrollment.GetProperty("id").GetString();
+                if (!string.IsNullOrEmpty(enrollmentId))
+                {
+                    await _httpClient.DeleteWithAuthAsync($"/api/enrollments/{enrollmentId}", adminToken);
+                    // Ignore errors - the enrollment might already be deleted
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
     }
 }
 

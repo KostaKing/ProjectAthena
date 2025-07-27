@@ -97,6 +97,15 @@ public static class AuthEndpoints
             .Produces(401)
             .Produces(403)
             .Produces(400);
+
+        adminGroup.MapDelete("/users/{userId}", DeleteUserAsync)
+            .WithName("DeleteUser")
+            .WithSummary("Delete user")
+            .WithDescription("Permanently delete a user account (Admin only)")
+            .Produces(200)
+            .Produces(401)
+            .Produces(403)
+            .Produces(400);
     }
 
     private static async Task<IResult> LoginAsync(
@@ -122,7 +131,7 @@ public static class AuthEndpoints
                 title: "Authentication failed",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -159,7 +168,7 @@ public static class AuthEndpoints
                 title: "Registration failed",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -197,7 +206,7 @@ public static class AuthEndpoints
                 title: "Token refresh failed",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -224,7 +233,7 @@ public static class AuthEndpoints
             await authService.LogoutAsync(userId);
             return Results.Ok(new { message = "Logged out successfully" });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -258,7 +267,7 @@ public static class AuthEndpoints
                 title: "Unauthorized",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -307,7 +316,7 @@ public static class AuthEndpoints
                 title: "Password change failed",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -330,7 +339,7 @@ public static class AuthEndpoints
                 title: "Unauthorized",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -353,7 +362,7 @@ public static class AuthEndpoints
                 title: "Activation failed",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
@@ -376,12 +385,35 @@ public static class AuthEndpoints
                 title: "Deactivation failed",
                 detail: ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Results.Problem(
                 statusCode: 500,
                 title: "Deactivation failed",
                 detail: "An error occurred while deactivating the user");
+        }
+    }
+
+    private static async Task<IResult> DeleteUserAsync(string userId, IAuthService authService)
+    {
+        try
+        {
+            await authService.DeleteUserAsync(userId);
+            return Results.Ok(new { message = "User deleted successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.Problem(
+                statusCode: 400,
+                title: "Deletion failed",
+                detail: ex.Message);
+        }
+        catch (Exception)
+        {
+            return Results.Problem(
+                statusCode: 500,
+                title: "Deletion failed",
+                detail: "An error occurred while deleting the user");
         }
     }
 }

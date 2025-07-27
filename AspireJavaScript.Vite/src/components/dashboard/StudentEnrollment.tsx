@@ -22,9 +22,10 @@ import {
 interface StudentEnrollmentProps {
   courses: CourseDto[];
   onClose: () => void;
+  onEnrollmentSuccess?: () => void;
 }
 
-export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) {
+export function StudentEnrollment({ courses, onClose, onEnrollmentSuccess }: StudentEnrollmentProps) {
   const [students, setStudents] = useState<StudentDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
@@ -33,6 +34,7 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [enrolledStudents, setEnrolledStudents] = useState<Set<string>>(new Set());
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [localCourses, setLocalCourses] = useState<CourseDto[]>(courses);
 
   // Form setup with validation
   const form = useForm<StudentEnrollmentFormData>({
@@ -45,6 +47,11 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  // Update local courses when props change
+  useEffect(() => {
+    setLocalCourses(courses);
+  }, [courses]);
 
   useEffect(() => {
     if (selectedCourse?.id) {
@@ -171,6 +178,23 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
       
       if (successful > 0) {
         toast.success(`Successfully enrolled ${successful} student(s) in ${selectedCourse!.title}`);
+        
+        // Update local course enrollment count immediately
+        setLocalCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === selectedCourse!.id 
+              ? { ...course, currentEnrollments: (course.currentEnrollments || 0) + successful }
+              : course
+          )
+        );
+        
+        // Update selected course state as well
+        if (selectedCourse) {
+          setSelectedCourse(prev => prev ? {
+            ...prev,
+            currentEnrollments: (prev.currentEnrollments || 0) + successful
+          } : null);
+        }
       }
       
       if (failed > 0) {
@@ -184,6 +208,9 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
       }
       setSelectedStudents(new Set());
       form.reset({ studentIds: [] });
+      
+      // Notify parent to refresh course data
+      onEnrollmentSuccess?.();
       
     } catch (error) {
       toast.error('Failed to process enrollments');
@@ -204,7 +231,7 @@ export function StudentEnrollment({ courses, onClose }: StudentEnrollmentProps) 
     );
   });
 
-  const availableCourses = courses.filter(course => {
+  const availableCourses = localCourses.filter(course => {
     if (!course.isActive) return false;
     const current = course.currentEnrollments || 0;
     const max = course.maxEnrollments || 0;

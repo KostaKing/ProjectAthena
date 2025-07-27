@@ -74,6 +74,12 @@ public static class EnrollmentEndpoints
             .Produces<EnrollmentReportResponseDto>(200)
             .Produces(400)
             .RequireAuthorization("Teacher");
+
+        group.MapGet("/check/{studentId}/{courseId:guid}", CheckEnrollmentStatus)
+            .WithName("CheckEnrollmentStatus")
+            .WithSummary("Check if student is enrolled in a course")
+            .Produces<EnrollmentCheckDto>(200)
+            .AllowAnonymous();
     }
 
     private static async Task<IResult> GetAllEnrollments(
@@ -235,6 +241,40 @@ public static class EnrollmentEndpoints
                 statusCode: 500);
         }
     }
+
+    private static async Task<IResult> CheckEnrollmentStatus(string studentId, Guid courseId, IEnrollmentService enrollmentService)
+    {
+        try
+        {
+            var isCurrentlyEnrolled = await enrollmentService.IsStudentEnrolledAsync(studentId, courseId);
+            var hasEverEnrolled = await enrollmentService.HasStudentEverEnrolledAsync(studentId, courseId);
+            
+            var result = new EnrollmentCheckDto
+            {
+                StudentId = studentId,
+                CourseId = courseId,
+                IsCurrentlyEnrolled = isCurrentlyEnrolled,
+                HasEverEnrolled = hasEverEnrolled
+            };
+            
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                title: "Error checking enrollment status",
+                detail: ex.Message,
+                statusCode: 500);
+        }
+    }
 }
 
 public record UpdateEnrollmentStatusDto(EnrollmentStatus Status, decimal? Grade);
+
+public record EnrollmentCheckDto
+{
+    public string StudentId { get; set; } = string.Empty;
+    public Guid CourseId { get; set; }
+    public bool IsCurrentlyEnrolled { get; set; }
+    public bool HasEverEnrolled { get; set; }
+};

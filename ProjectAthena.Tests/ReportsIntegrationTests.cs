@@ -72,7 +72,6 @@ public class ReportsIntegrationTests
         Assert.NotNull(report);
         Assert.NotNull(report.Items);
         Assert.True(report.Summary.TotalEnrollments >= 0);
-        Assert.NotNull(report.GeneratedAt);
         Assert.True(report.GeneratedAt <= DateTime.UtcNow);
     }
 

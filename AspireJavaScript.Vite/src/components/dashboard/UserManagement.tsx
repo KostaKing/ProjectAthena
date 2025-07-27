@@ -61,9 +61,15 @@ export function UserManagement() {
 
   const handleActivateUser = async (userId: string) => {
     try {
-      await authApi.activateUser(userId);
+      const updatedUser = await authApi.activateUser(userId);
       toast.success('User activated successfully');
-      await fetchUsers(); // Refresh the user list
+      
+      // Update local state instead of refetching
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? { ...user, isActive: updatedUser.isActive } : user
+        )
+      );
     } catch (error) {
       toast.error('Failed to activate user');
       console.error('Error activating user:', error);
@@ -72,9 +78,15 @@ export function UserManagement() {
 
   const handleDeactivateUser = async (userId: string) => {
     try {
-      await authApi.deactivateUser(userId);
+      const updatedUser = await authApi.deactivateUser(userId);
       toast.success('User deactivated successfully');
-      await fetchUsers(); // Refresh the user list
+      
+      // Update local state instead of refetching
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? { ...user, isActive: updatedUser.isActive } : user
+        )
+      );
     } catch (error) {
       toast.error('Failed to deactivate user');
       console.error('Error deactivating user:', error);
@@ -85,7 +97,9 @@ export function UserManagement() {
     try {
       await authApi.deleteUser(userId);
       toast.success('User deleted successfully');
-      await fetchUsers(); // Refresh the user list
+      
+      // Remove user from local state instead of refetching
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     } catch (error) {
       toast.error('Failed to delete user');
       console.error('Error deleting user:', error);

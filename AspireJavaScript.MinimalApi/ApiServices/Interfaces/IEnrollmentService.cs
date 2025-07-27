@@ -16,4 +16,5 @@ public interface IEnrollmentService
     Task<EnrollmentReportDto?> GenerateEnrollmentReportAsync(Guid courseId);
     Task<EnrollmentReportResponseDto> GenerateAdvancedEnrollmentReportAsync(EnrollmentReportRequestDto request);
     Task<bool> IsStudentEnrolledAsync(string studentId, Guid courseId);
+    Task<bool> HasStudentEverEnrolledAsync(string studentId, Guid courseId);
 }

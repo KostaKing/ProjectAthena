@@ -7,7 +7,7 @@ var postgres = builder.AddPostgres("postgres", username, password)
     .WithDataVolume(isReadOnly: false)
     .WithPgAdmin();
 var ProjectAthenaDB = postgres.AddDatabase("ProjectAthenaDB");
-var ngrokAuthToken = builder.AddParameter("ngrok-auth-token", "2zg42YIX4zF8cSEjmsq70MuxIzj_6FKWxijKnH7ZeGL5rUK6t", secret: true);
+var ngrokAuthToken = builder.AddParameter("ngrok-auth-token", "2zgYIX4zF8cSEjmsq70MuxIzj_6FWxijKnH7ZeGL5rUK6t", secret: true);
 var dbService = builder.AddProject<Projects.ProjectAthena_DbWorkerService>("ProjectAthena-DbWorkerService").WithReference(ProjectAthenaDB).WaitFor(ProjectAthenaDB);
 
 var projectAthenaApi = builder.AddProject<Projects.ProjectAthena_MinimalApi>("ProjectAthenaApi")
@@ -26,12 +26,4 @@ var reactClient = builder.AddNpmApp("reactvite", "../AspireJavaScript.Vite")
     .WaitFor(projectAthenaApi)
     .PublishAsDockerFile();
 
-
-
-//builder.AddNgrok("ngrok")
-//    .WithAuthToken(ngrokAuthToken)
-//    // Add tunnel for API service (will get a random ngrok URL)
-//    .WithTunnelEndpoint(projectAthenaApi, "https", "smartfixpro.ngrok-free.app")
-//    // Add tunnel for Client service (will get a separate random ngrok URL)  
-//    .WithTunnelEndpoint(reactClient, "https", "smartfixproclient.ngrok-free.app");
 builder.Build().Run();

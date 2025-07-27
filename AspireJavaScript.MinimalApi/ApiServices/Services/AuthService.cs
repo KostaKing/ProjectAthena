@@ -167,16 +167,16 @@ public class AuthService : IAuthService
         return user.ToDto();
     }
 
-    public async Task<bool> ValidateTokenAsync(string token)
+    public Task<bool> ValidateTokenAsync(string token)
     {
         try
         {
             var principal = _tokenService.GetPrincipalFromExpiredToken(token);
-            return principal != null;
+            return Task.FromResult(principal != null);
         }
         catch
         {
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -247,5 +247,27 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("User {UserId} deactivated", userId);
         return user.ToDto();
+    }
+
+    public async Task DeleteUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            throw new InvalidOperationException("User not found");
+        }
+
+        var result = await _userManager.DeleteAsync(user);
+        
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to delete user: {errors}");
+        }
+
+        // Revoke all refresh tokens for this user
+        await _tokenService.RevokeRefreshTokenAsync(userId);
+
+        _logger.LogInformation("User {UserId} deleted", userId);
     }
 }

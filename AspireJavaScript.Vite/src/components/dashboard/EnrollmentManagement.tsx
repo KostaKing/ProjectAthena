@@ -131,6 +131,7 @@ export function EnrollmentManagement() {
           setShowStudentForm(false);
           fetchData();
         }}
+        onEnrollmentSuccess={fetchData}
       />
     );
   }

@@ -71,9 +71,11 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 ### Prerequisites
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for PostgreSQL)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) - **Must be running with healthy engine**
 - [Node.js 20+](https://nodejs.org)
 - **Optional**: [Visual Studio 2022 17.12+](https://visualstudio.microsoft.com/vs/)
+
+**Important**: Ensure Docker Desktop is running and the Docker engine is healthy before starting the application, as PostgreSQL runs in a Docker container.
 
 ### Local Development Setup
 

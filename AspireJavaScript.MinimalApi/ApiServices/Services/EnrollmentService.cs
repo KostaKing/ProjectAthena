@@ -119,7 +119,16 @@ public class EnrollmentService : IEnrollmentService
 
     public async Task<EnrollmentDto> CreateEnrollmentAsync(CreateEnrollmentDto createEnrollmentDto)
     {
-        if (await IsStudentEnrolledAsync(createEnrollmentDto.StudentId, createEnrollmentDto.CourseId))
+        var studentId = Guid.Parse(createEnrollmentDto.StudentId);
+        
+        // Check if student is already actively enrolled
+        var existingActiveEnrollment = await _context.Enrollments
+            .FirstOrDefaultAsync(e => e.StudentId == studentId && 
+                                    e.CourseId == createEnrollmentDto.CourseId && 
+                                    e.IsActive && 
+                                    e.Status == EnrollmentStatus.Active);
+        
+        if (existingActiveEnrollment != null)
         {
             throw new InvalidOperationException("Student is already enrolled in this course.");
         }
@@ -138,24 +147,44 @@ public class EnrollmentService : IEnrollmentService
             throw new InvalidOperationException("Course has reached maximum enrollment capacity.");
         }
 
-        var studentId = Guid.Parse(createEnrollmentDto.StudentId);
         var student = await _context.Students.FirstOrDefaultAsync(s => s.Id == studentId && s.IsActive);
         if (student == null)
         {
             throw new ArgumentException("Student not found.");
         }
 
-        // Check for duplicate enrollment
-        var existingEnrollment = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.StudentId == studentId && e.CourseId == createEnrollmentDto.CourseId && e.IsActive);
-        if (existingEnrollment != null)
+        // Check if there's a previous enrollment that was dropped/suspended and reactivate it
+        var previousEnrollment = await _context.Enrollments
+            .FirstOrDefaultAsync(e => e.StudentId == studentId && 
+                                    e.CourseId == createEnrollmentDto.CourseId && 
+                                    e.IsActive && 
+                                    (e.Status == EnrollmentStatus.Dropped || e.Status == EnrollmentStatus.Suspended));
+        
+        if (previousEnrollment != null)
         {
-            throw new InvalidOperationException("Student is already enrolled in this course.");
+            // Reactivate the previous enrollment
+            previousEnrollment.Status = EnrollmentStatus.Active;
+            previousEnrollment.EnrollmentDate = DateTime.UtcNow;
+            previousEnrollment.UpdatedAt = DateTime.UtcNow;
+            previousEnrollment.Grade = null;
+            previousEnrollment.CompletionDate = null;
+            
+            await _context.SaveChangesAsync();
+            return await GetEnrollmentByIdAsync(previousEnrollment.Id) ?? throw new InvalidOperationException("Failed to retrieve updated enrollment.");
         }
 
+        // Create new enrollment
         var enrollment = createEnrollmentDto.ToEntity();
         _context.Enrollments.Add(enrollment);
-        await _context.SaveChangesAsync();
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("IX_Enrollments_StudentId_CourseId") == true)
+        {
+            throw new InvalidOperationException("Student enrollment already exists for this course. Please check if the student was previously enrolled.", ex);
+        }
 
         return await GetEnrollmentByIdAsync(enrollment.Id) ?? throw new InvalidOperationException("Failed to retrieve created enrollment.");
     }
@@ -239,11 +268,28 @@ public class EnrollmentService : IEnrollmentService
 
     public async Task<bool> IsStudentEnrolledAsync(string studentId, Guid courseId)
     {
-        var studentGuid = Guid.Parse(studentId);
+        if (!Guid.TryParse(studentId, out var studentGuid))
+        {
+            return false; // Invalid studentId means not enrolled
+        }
+        
         return await _context.Enrollments.AnyAsync(e => 
             e.StudentId == studentGuid && 
             e.CourseId == courseId && 
             e.Status == EnrollmentStatus.Active && 
+            e.IsActive);
+    }
+
+    public async Task<bool> HasStudentEverEnrolledAsync(string studentId, Guid courseId)
+    {
+        if (!Guid.TryParse(studentId, out var studentGuid))
+        {
+            return false;
+        }
+        
+        return await _context.Enrollments.AnyAsync(e => 
+            e.StudentId == studentGuid && 
+            e.CourseId == courseId && 
             e.IsActive);
     }
 

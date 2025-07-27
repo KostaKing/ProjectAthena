@@ -100,15 +100,15 @@ public class TokenService : ITokenService
         }
     }
 
-    public async Task<bool> ValidateRefreshTokenAsync(string userId, string refreshToken)
+    public Task<bool> ValidateRefreshTokenAsync(string userId, string refreshToken)
     {
         var cacheKey = $"refresh_token_{userId}";
         if (_cache.TryGetValue(cacheKey, out string? cachedToken))
         {
-            return cachedToken == refreshToken;
+            return Task.FromResult(cachedToken == refreshToken);
         }
 
-        return false;
+        return Task.FromResult(false);
     }
 
     public async Task SaveRefreshTokenAsync(string userId, string refreshToken)
