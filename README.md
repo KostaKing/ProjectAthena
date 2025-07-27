@@ -133,6 +133,8 @@ dotnet test
    dotnet run
    ```
 
+   **⏳ First Run Note**: The initial startup may take several minutes as Docker images (PostgreSQL, pgAdmin) are downloaded. You can monitor the download progress in the .NET Aspire dashboard logs.
+
 4. **Access the Application**
    - **.NET Aspire Dashboard**: Auto-launches in browser
    - **React Frontend**: Available through Aspire dashboard
