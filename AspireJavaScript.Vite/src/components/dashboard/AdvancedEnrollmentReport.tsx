@@ -137,7 +137,6 @@ export function AdvancedEnrollmentReport({ onClose }: AdvancedEnrollmentReportPr
       
       const reportData = await enrollmentApi.generateAdvancedEnrollmentReport(requestData);
       setReport(reportData);
-      setFiltersExpanded(false);
       toast.success('Report generated successfully');
     } catch (error) {
       toast.error('Failed to generate enrollment report');

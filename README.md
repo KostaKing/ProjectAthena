@@ -85,7 +85,14 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
    cd ProjectAthena
    ```
 
-2. **Run the Application**
+2. **Install .NET Aspire Workload** (if encountering Aspire SDK issues)
+   ```bash
+   dotnet workload install aspire
+   ```
+   
+   **Note**: If you encounter errors like "Unable to load Aspire SDK" or "Aspire workload not found", run the above command to install the required Aspire workload.
+
+3. **Run the Application**
 
    **Option A: Visual Studio**
    - Open `ProjectAthena.sln`
@@ -103,6 +110,11 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
    - **React Frontend**: Available through Aspire dashboard
    - **API Documentation**: Swagger UI available in development
    - **Database Admin**: pgAdmin available through Aspire dashboard
+
+   **SSL Certificate Issues**: If you encounter SSL certificate errors when accessing the application, try:
+   - Using a different browser (Chrome, Firefox, Edge)
+   - Opening the application in incognito/private mode
+   - Accepting the self-signed certificate warning in your browser
 
 ### Database Seeding
 
@@ -129,13 +141,41 @@ The `ProjectAthena.DbWorkerService` automatically:
 - **Status Management**: Track active, upcoming, and completed courses
 - **Search & Filtering**: Advanced filtering by status, enrollment level, instructor
 
-### **Advanced Reporting System**
-- **Multi-dimensional Reports**: Group by course, student, instructor, status, or date
-- **Advanced Filtering**: Date ranges, grade ranges, status filters, course-specific reports
-- **Real-time Validation**: Client-side validation with immediate feedback
-- **Export Capabilities**: CSV export with PDF export (coming soon)
-- **Performance Analytics**: Average grades, completion rates, enrollment trends
-- **Visual Summaries**: Progress bars, status badges, and enrollment statistics
+### **Advanced Enrollment Reporting System** 🏆
+ProjectAthena's flagship feature - a comprehensive reporting engine that transforms enrollment data into actionable insights.
+
+**📊 Multi-Dimensional Analytics**
+- **Flexible Grouping**: Organize reports by Course, Student, Instructor, Status, or Date Range
+- **Smart Filtering**: Filter by specific courses, students, enrollment statuses, date ranges, and grade ranges
+- **Real-time Statistics**: Live calculation of total enrollments, completion rates, average grades, and performance metrics
+- **Dynamic Summary Cards**: Visual dashboard showing active enrollments, completed courses, and grade distributions
+
+**🔍 Advanced Filter Capabilities**
+- **Course-Specific Reports**: Generate reports for individual courses or across all courses
+- **Student Performance Tracking**: Filter by individual students or analyze entire cohorts
+- **Date Range Analysis**: Track enrollment trends over custom time periods
+- **Grade Range Filtering**: Focus on specific performance brackets (e.g., students scoring 80-100%)
+- **Status-Based Insights**: Analyze active, completed, dropped, or suspended enrollments
+
+**📈 Interactive Data Visualization**
+- **Collapsible Filter Panel**: Intuitive UI with expandable/collapsible advanced filters
+- **Real-time Validation**: Instant feedback on filter combinations with error prevention
+- **Grouped Results Display**: Organized presentation showing enrollment counts and average grades per group
+- **Status Badges**: Color-coded indicators for quick enrollment status identification
+- **Performance Metrics**: Visual representation of completion rates and grade distributions
+
+**💾 Export & Data Management**
+- **CSV Export**: Download detailed reports with all enrollment data for external analysis
+- **Structured Data Output**: Includes student details, course information, grades, dates, and status
+- **PDF Export**: Coming soon for formatted report generation
+- **Custom File Naming**: Automatic timestamping for organized report management
+
+**🎯 Business Intelligence Features**
+- **Completion Rate Analysis**: Track course success rates across different time periods
+- **Instructor Performance**: Compare enrollment outcomes across different instructors
+- **Student Progress Monitoring**: Individual and cohort-based performance tracking
+- **Enrollment Trend Analysis**: Historical data analysis for strategic planning
+- **Grade Distribution Insights**: Identify patterns in student performance across courses
 
 ### **User Management**
 - **Role-based Access Control**: Admin, Teacher, Student roles with appropriate permissions
