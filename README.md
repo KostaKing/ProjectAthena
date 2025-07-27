@@ -328,64 +328,6 @@ ProjectAthena/
 └── ProjectAthena.Tests/                # Integration tests
 ```
 
-## 🚀 Production Deployment
-
-### Environment Configuration
-
-**Required Environment Variables**:
-```bash
-# JWT Configuration (REQUIRED for production)
-Jwt__SecretKey=your-super-secure-jwt-secret-key-minimum-256-bits
-
-# Database Connection
-ConnectionStrings__DefaultConnection=your-production-db-connection-string
-
-# CORS Origins (comma-separated)
-AllowedOrigins=https://yourdomain.com,https://www.yourdomain.com
-
-# Optional: AWS S3 for report storage
-AWS__AccessKey=your-aws-access-key
-AWS__SecretKey=your-aws-secret-key
-AWS__BucketName=your-s3-bucket-name
-```
-
-**Azure Deployment** (Recommended):
-```bash
-# Set JWT secret in Azure Key Vault or App Configuration
-az keyvault secret set --vault-name your-vault --name "Jwt--SecretKey" --value "your-secret"
-
-# Configure CORS for your production domain
-az webapp config appsettings set --name your-app --resource-group your-rg --settings "AllowedOrigins=https://yourdomain.com"
-```
-
-### Production Checklist ✅
-
-- [ ] Set secure JWT secret key (minimum 256 bits)
-- [ ] Configure production database connection string
-- [ ] Update CORS origins to your production domains
-- [ ] Enable HTTPS enforcement
-- [ ] Set up monitoring and logging
-- [ ] Configure backup strategies for PostgreSQL
-- [ ] Test all API endpoints in production environment
-- [ ] Verify mobile responsiveness on actual devices
-- [ ] Run performance testing under load
-
-### Health Checks
-
-The application includes built-in health checks:
-- `/health` - Application health status
-- `/health/ready` - Readiness probe for orchestrators
-- `/health/live` - Liveness probe for orchestrators
-
-### Monitoring
-
-**Built-in Observability**:
-- Structured logging with correlation IDs
-- .NET Aspire dashboard for development
-- OpenTelemetry integration ready
-- Custom metrics for enrollment and course analytics
-
----
 
 **ProjectAthena** - Empowering Education Through Technology
 
