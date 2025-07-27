@@ -8,14 +8,14 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 
 ### System Components
 
-- **🎯 ProjectAthena.AppHost**: .NET Aspire orchestrator managing all services
-- **🌐 ProjectAthena.MinimalApi**: Main API service using ASP.NET Core Minimal APIs
+- **🎯 AspireJavaScript.AppHost**: .NET Aspire orchestrator managing all services
+- **🌐 AspireJavaScript.MinimalApi**: Main API service using ASP.NET Core Minimal APIs
 - **💾 ProjectAthena.Data**: Entity Framework Core data layer with PostgreSQL
 - **📋 ProjectAthena.Dtos**: Data Transfer Objects for API contracts
 - **🔄 ProjectAthena.DbWorkerService**: Database seeding and migration service
 - **⚛️ AspireJavaScript.Vite**: React frontend with TypeScript and Vite
-- **⚙️ ProjectAthena.ServiceDefaults**: Common service configurations
-- **🧪 ProjectAthena.Tests**: Comprehensive integration tests
+- **⚙️ AspireJavaScript.ServiceDefaults**: Common service configurations
+- **🧪 ProjectAthena.Tests**: Comprehensive integration tests with AWS S3 mock testing
 
 ### Technology Stack
 
@@ -161,19 +161,19 @@ The `ProjectAthena.DbWorkerService` automatically:
 
 ## 🎯 Key Features
 
-### **Advanced Admin Dashboard**
-- **Real-time Analytics**: Live dashboard with completion rates, average grades, and enrollment metrics
-- **Student-Teacher Ratio**: Automatic calculation and optimization recommendations
-- **Activity Monitoring**: Recent system activities with detailed timestamps
-- **Performance Indicators**: Color-coded metrics for quick assessment
-- **Interactive Charts**: Visual representations of course and enrollment data
+### **Admin Dashboard**
+- **User Management**: Comprehensive user directory with role-based access control
+- **Course Management**: Full CRUD operations for courses with instructor assignments
+- **Enrollment Oversight**: Monitor and manage student enrollments across all courses
+- **System Analytics**: Basic metrics and reporting capabilities
+- **Role-Based Navigation**: Different dashboard views for Admin, Teacher, and Student roles
 
-### **Comprehensive Course Management**
-- **Course Creation**: Full CRUD operations with enrollment limits and schedules
-- **Instructor Assignment**: Link courses to qualified instructors
-- **Capacity Tracking**: Real-time enrollment monitoring with visual indicators
-- **Status Management**: Track active, upcoming, and completed courses
-- **Search & Filtering**: Advanced filtering by status, enrollment level, instructor
+### **Course Management System**
+- **Course Creation**: Full CRUD operations with course codes, credits, and enrollment limits
+- **Instructor Assignment**: Link courses to qualified teacher accounts
+- **Enrollment Tracking**: Monitor current enrollments against maximum capacity
+- **Course Scheduling**: Start and end date management for course sessions
+- **Data Integrity**: Unique course codes and proper validation throughout
 
 ### **Advanced Enrollment Reporting System** 🏆
 ProjectAthena's flagship feature - a comprehensive reporting engine that transforms enrollment data into actionable insights.
@@ -199,10 +199,10 @@ ProjectAthena's flagship feature - a comprehensive reporting engine that transfo
 - **Performance Metrics**: Visual representation of completion rates and grade distributions
 
 **💾 Export & Data Management**
-- **CSV Export**: Download detailed reports with all enrollment data for external analysis
-- **Structured Data Output**: Includes student details, course information, grades, dates, and status
-- **PDF Export**: Coming soon for formatted report generation
-- **Custom File Naming**: Automatic timestamping for organized report management
+- **JSON Data Export**: Structured enrollment data with comprehensive details
+- **Report Data Structure**: Includes student details, course information, grades, dates, and status
+- **AWS S3 Integration**: Mock S3 client for testing report storage and retrieval
+- **Bulk Operations**: Support for handling multiple reports and data sets
 
 **🎯 Business Intelligence Features**
 - **Completion Rate Analysis**: Track course success rates across different time periods
@@ -243,12 +243,12 @@ ProjectAthena's flagship feature - a comprehensive reporting engine that transfo
 ## 🧪 Testing
 
 The project includes comprehensive integration tests covering:
-- **Authentication workflows**: JWT token generation and validation
-- **Course management operations**: CRUD operations with authorization
-- **Enrollment processes**: Advanced reporting and data management
-- **Database operations**: Entity Framework integration and migrations
-- **API endpoint functionality**: End-to-end API testing with real database
-- **AWS S3 Integration**: Report storage and retrieval testing
+- **Authentication workflows**: JWT token generation and validation for all user roles
+- **Course management operations**: CRUD operations with proper authorization
+- **Enrollment processes**: Advanced reporting system with filtering and grouping
+- **Database operations**: Entity Framework integration with PostgreSQL
+- **API endpoint functionality**: End-to-end API testing with real database integration
+- **AWS S3 Mock Integration**: Report storage and retrieval testing with mock S3 client
 
 **Test Commands**:
 ```bash
@@ -263,9 +263,10 @@ dotnet test ProjectAthena.Tests
 ```
 
 **Test Results Summary**:
-- ✅ Authentication Tests: JWT token generation for all user roles
-- ✅ Integration Tests: Advanced enrollment reporting system
-- ✅ All tests passing with full database integration
+- ✅ Authentication Tests: JWT token generation and validation for Admin, Teacher, Student roles
+- ✅ Enrollment Integration Tests: Advanced reporting with filtering, grouping, and data export
+- ✅ AWS S3 Mock Tests: Report storage, retrieval, and bulk operations with mock S3 client
+- ✅ All tests passing with PostgreSQL database integration via Aspire testing framework
 
 ## 🛠️ Development Notes
 
@@ -284,20 +285,19 @@ dotnet test ProjectAthena.Tests
 - **Modern C# Patterns**: Pattern matching, collection expressions, and async best practices
 - **CancellationToken Support**: All async operations support cancellation for better resource management
 - **AsNoTracking**: Used for read-only operations to improve EF Core performance
-- **Selective Loading**: Include only necessary related data  
-- **Pagination**: Implemented for large data sets
-- **Caching**: Memory caching for frequently accessed data
+- **Selective Loading**: Include only necessary related data with optimized queries
+- **Pagination**: Implemented for large data sets in enrollment listings
 - **TypeScript Generation**: Build-time type generation eliminates runtime validation overhead
 - **Mobile-First UI**: Responsive design with horizontal scrolling and optimized mobile navigation
 
 ### **Security Best Practices** 🛡️
 - **Input Validation**: All inputs validated and sanitized using FluentValidation
 - **SQL Injection**: Protected via Entity Framework Core parameterized queries
-- **Token Security**: Production-ready JWT configuration with environment-specific secrets
-- **CORS Security**: Development/production CORS policies with proper origin restrictions
-- **Secret Management**: Secure handling of JWT secrets with Key Vault integration
-- **Environment Configuration**: Development warnings for insecure configurations
-- **Authorization**: Role-based access control with proper endpoint protection
+- **JWT Authentication**: Production-ready JWT Bearer token implementation with ASP.NET Core Identity
+- **Role-Based Authorization**: Admin, Teacher, Student roles with proper endpoint protection
+- **Password Security**: Enforced complexity requirements and account lockout protection
+- **CORS Security**: Environment-specific CORS policies (permissive for development, restrictive for production)
+- **Secret Management**: Secure JWT secret handling with environment-specific configuration
 - **HTTPS Enforcement**: SSL/TLS configuration for production deployments
 
 ## 📁 Project Structure
@@ -307,20 +307,34 @@ ProjectAthena/
 ├── AspireJavaScript.AppHost/           # .NET Aspire orchestrator
 ├── AspireJavaScript.MinimalApi/        # Main API service
 │   ├── ApiServices/                    # Business logic services
+│   │   ├── Interfaces/                 # Service interfaces
+│   │   └── Services/                   # Service implementations
 │   ├── Endpoints/                      # Minimal API endpoints
+│   │   ├── Students/                   # Student-specific endpoints
+│   │   └── Teachers/                   # Teacher-specific endpoints
 │   ├── Validators/                     # FluentValidation validators
 │   └── Mappings/                       # DTO mapping extensions
-├── AspireJavaScript.Vite/              # React frontend
+├── AspireJavaScript.Vite/              # React frontend with TypeScript
 │   ├── src/components/                 # React components
+│   │   ├── auth/                       # Authentication components
+│   │   ├── dashboard/                  # Dashboard and management components
+│   │   ├── layout/                     # Layout components
+│   │   └── ui/                         # shadcn/ui components
 │   ├── src/services/                   # API service clients
-│   └── src/types/                      # TypeScript definitions
+│   └── src/types/                      # Auto-generated TypeScript types
+├── AspireJavaScript.ServiceDefaults/   # Common service configurations
 ├── ProjectAthena.Data/                 # Data layer
 │   ├── Models/                         # Entity models
-│   ├── Persistence/                    # DbContext
-│   └── Migrations/                     # EF migrations
-├── ProjectAthena.Dtos/                 # Data Transfer Objects
-├── ProjectAthena.DbWorkerService/      # Database seeding service
-└── ProjectAthena.Tests/                # Integration tests
+│   │   ├── Students/                   # Student entity
+│   │   └── Teachers/                   # Teacher entity
+│   └── Persistence/                    # DbContext and configurations
+├── ProjectAthena.Dtos/                 # Data Transfer Objects with mappings
+├── ProjectAthena.DbWorkerService/      # Database seeding and migration service
+├── ProjectAthena.ReportGenerationLambda/ # AWS Lambda for report generation
+└── ProjectAthena.Tests/                # Comprehensive integration tests
+    ├── Authentication tests            # JWT and user role testing
+    ├── Enrollment integration tests    # Advanced reporting system tests
+    └── AWS S3 mock tests              # Report storage testing with mock client
 ```
 
 
