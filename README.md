@@ -56,15 +56,6 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 - **Consistent Responses**: Standardized error responses with trace IDs for debugging
 - **Logging**: Structured logging throughout the application
 
-### **Security Implementation** 🔒
-- **Authentication**: JWT Bearer tokens with ASP.NET Core Identity
-- **Authorization**: Role-based access control (Admin, Teacher, Student)
-- **Password Policy**: Enforced complexity requirements
-- **Account Lockout**: Protection against brute force attacks
-- **Environment-Specific JWT**: Secure secret management for development vs production
-- **CORS Security**: Configurable CORS policies with production restrictions
-- **Secret Management**: Integration with User Secrets, Environment Variables, and Azure Key Vault
-
 ### **Database Design**
 - **Soft Deletes**: Entities marked as inactive rather than physically deleted
 - **Audit Trail**: CreatedAt/UpdatedAt timestamps on all entities
