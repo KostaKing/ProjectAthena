@@ -30,9 +30,11 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 | **Frontend** | React 19 with TypeScript + auto-generated types |
 | **Build Tool** | Vite with HMR and TypeScript support |
 | **Styling** | Tailwind CSS with shadcn/ui component library |
+| **UI Components** | shadcn/ui with responsive mobile-first design |
 | **Orchestration** | .NET Aspire with service discovery |
 | **Database Admin** | pgAdmin with Docker integration |
 | **Testing** | xUnit with comprehensive integration tests |
+| **Production Features** | Environment-specific configs, CancellationToken support |
 
 ## 🏛️ Design Decisions
 
@@ -54,11 +56,14 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 - **Consistent Responses**: Standardized error responses with trace IDs for debugging
 - **Logging**: Structured logging throughout the application
 
-### **Security Implementation**
+### **Security Implementation** 🔒
 - **Authentication**: JWT Bearer tokens with ASP.NET Core Identity
 - **Authorization**: Role-based access control (Admin, Teacher, Student)
 - **Password Policy**: Enforced complexity requirements
 - **Account Lockout**: Protection against brute force attacks
+- **Environment-Specific JWT**: Secure secret management for development vs production
+- **CORS Security**: Configurable CORS policies with production restrictions
+- **Secret Management**: Integration with User Secrets, Environment Variables, and Azure Key Vault
 
 ### **Database Design**
 - **Soft Deletes**: Entities marked as inactive rather than physically deleted
@@ -76,6 +81,29 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 - **Optional**: [Visual Studio 2022 17.12+](https://visualstudio.microsoft.com/vs/)
 
 **Important**: Ensure Docker Desktop is running and the Docker engine is healthy before starting the application, as PostgreSQL runs in a Docker container.
+
+### Production Deployment Notes
+
+**Security Configuration**:
+- Set `Jwt:SecretKey` in production using:
+  - Azure Key Vault (recommended)
+  - Environment variables
+  - User secrets (development only)
+- Configure CORS origins for your production domains
+- Use HTTPS in production environments
+
+**Build Verification**:
+```bash
+# Ensure 0 warnings and errors
+dotnet build --configuration Release
+
+# Verify TypeScript compilation
+cd AspireJavaScript.Vite
+npx tsc --noEmit -p tsconfig.app.json
+
+# Run all tests
+dotnet test
+```
 
 ### Local Development Setup
 
@@ -105,7 +133,7 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
    dotnet run
    ```
 
-3. **Access the Application**
+4. **Access the Application**
    - **.NET Aspire Dashboard**: Auto-launches in browser
    - **React Frontend**: Available through Aspire dashboard
    - **API Documentation**: Swagger UI available in development
@@ -115,6 +143,17 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
    - Using a different browser (Chrome, Firefox, Edge)
    - Opening the application in incognito/private mode
    - Accepting the self-signed certificate warning in your browser
+
+5. **Login to the Application**
+   - Navigate to the React frontend through the Aspire dashboard
+   - On the login page, **click the "Admin" button** to auto-fill login credentials
+   - This will populate the email and password fields with the default admin account
+   - Click "Sign In" to access the admin dashboard
+   
+   **Quick Login Options**:
+   - **Admin**: Click "Admin" button for auto-fill (recommended for testing)
+   - **Teacher**: Click "Teacher" button for instructor account
+   - **Student**: Click "Student" button for student account
 
 ### Database Seeding
 
@@ -209,38 +248,62 @@ ProjectAthena's flagship feature - a comprehensive reporting engine that transfo
 ## 🧪 Testing
 
 The project includes comprehensive integration tests covering:
-- Authentication workflows
-- Course management operations
-- Enrollment processes
-- Database operations
-- API endpoint functionality
+- **Authentication workflows**: JWT token generation and validation
+- **Course management operations**: CRUD operations with authorization
+- **Enrollment processes**: Advanced reporting and data management
+- **Database operations**: Entity Framework integration and migrations
+- **API endpoint functionality**: End-to-end API testing with real database
+- **AWS S3 Integration**: Report storage and retrieval testing
 
-Run tests with:
+**Test Commands**:
 ```bash
+# Run all tests
 dotnet test
+
+# Run tests with detailed output
+dotnet test --verbosity normal
+
+# Run specific test project
+dotnet test ProjectAthena.Tests
 ```
+
+**Test Results Summary**:
+- ✅ Authentication Tests: JWT token generation for all user roles
+- ✅ Integration Tests: Advanced enrollment reporting system
+- ✅ All tests passing with full database integration
 
 ## 🛠️ Development Notes
 
-### **Code Quality Standards**
-- **Error Handling**: Consistent patterns across all endpoints
-- **Logging**: Structured logging with appropriate levels
-- **Validation**: FluentValidation for input validation
-- **Documentation**: Comprehensive API documentation with Swagger
+### **Code Quality Standards** 📋
+- **Modern C# 12/13**: Pattern matching, collection expressions, and latest language features
+- **Async Best Practices**: CancellationToken support throughout the application
+- **Error Handling**: Consistent patterns across all endpoints with detailed exception handling
+- **Logging**: Structured logging with appropriate levels and trace IDs
+- **Validation**: FluentValidation for input validation with custom error messages
+- **Documentation**: Comprehensive API documentation with Swagger/OpenAPI
+- **Type Safety**: End-to-end type safety from C# DTOs to TypeScript frontend
+- **Mobile Responsiveness**: shadcn/ui components with mobile-first responsive design
 
-### **Performance Optimizations**
+### **Performance Optimizations** ⚡
 - **Minimal APIs**: Zero-allocation, high-performance endpoint routing
-- **AsNoTracking**: Used for read-only operations
+- **Modern C# Patterns**: Pattern matching, collection expressions, and async best practices
+- **CancellationToken Support**: All async operations support cancellation for better resource management
+- **AsNoTracking**: Used for read-only operations to improve EF Core performance
 - **Selective Loading**: Include only necessary related data  
 - **Pagination**: Implemented for large data sets
 - **Caching**: Memory caching for frequently accessed data
 - **TypeScript Generation**: Build-time type generation eliminates runtime validation overhead
+- **Mobile-First UI**: Responsive design with horizontal scrolling and optimized mobile navigation
 
-### **Security Best Practices**
-- **Input Validation**: All inputs validated and sanitized
-- **SQL Injection**: Protected via Entity Framework parameterized queries
-- **Token Security**: Secure JWT configuration with proper expiration
-- **CORS**: Configured for development (restrict for production)
+### **Security Best Practices** 🛡️
+- **Input Validation**: All inputs validated and sanitized using FluentValidation
+- **SQL Injection**: Protected via Entity Framework Core parameterized queries
+- **Token Security**: Production-ready JWT configuration with environment-specific secrets
+- **CORS Security**: Development/production CORS policies with proper origin restrictions
+- **Secret Management**: Secure handling of JWT secrets with Key Vault integration
+- **Environment Configuration**: Development warnings for insecure configurations
+- **Authorization**: Role-based access control with proper endpoint protection
+- **HTTPS Enforcement**: SSL/TLS configuration for production deployments
 
 ## 📁 Project Structure
 
@@ -265,6 +328,65 @@ ProjectAthena/
 └── ProjectAthena.Tests/                # Integration tests
 ```
 
+## 🚀 Production Deployment
+
+### Environment Configuration
+
+**Required Environment Variables**:
+```bash
+# JWT Configuration (REQUIRED for production)
+Jwt__SecretKey=your-super-secure-jwt-secret-key-minimum-256-bits
+
+# Database Connection
+ConnectionStrings__DefaultConnection=your-production-db-connection-string
+
+# CORS Origins (comma-separated)
+AllowedOrigins=https://yourdomain.com,https://www.yourdomain.com
+
+# Optional: AWS S3 for report storage
+AWS__AccessKey=your-aws-access-key
+AWS__SecretKey=your-aws-secret-key
+AWS__BucketName=your-s3-bucket-name
+```
+
+**Azure Deployment** (Recommended):
+```bash
+# Set JWT secret in Azure Key Vault or App Configuration
+az keyvault secret set --vault-name your-vault --name "Jwt--SecretKey" --value "your-secret"
+
+# Configure CORS for your production domain
+az webapp config appsettings set --name your-app --resource-group your-rg --settings "AllowedOrigins=https://yourdomain.com"
+```
+
+### Production Checklist ✅
+
+- [ ] Set secure JWT secret key (minimum 256 bits)
+- [ ] Configure production database connection string
+- [ ] Update CORS origins to your production domains
+- [ ] Enable HTTPS enforcement
+- [ ] Set up monitoring and logging
+- [ ] Configure backup strategies for PostgreSQL
+- [ ] Test all API endpoints in production environment
+- [ ] Verify mobile responsiveness on actual devices
+- [ ] Run performance testing under load
+
+### Health Checks
+
+The application includes built-in health checks:
+- `/health` - Application health status
+- `/health/ready` - Readiness probe for orchestrators
+- `/health/live` - Liveness probe for orchestrators
+
+### Monitoring
+
+**Built-in Observability**:
+- Structured logging with correlation IDs
+- .NET Aspire dashboard for development
+- OpenTelemetry integration ready
+- Custom metrics for enrollment and course analytics
+
 ---
 
 **ProjectAthena** - Empowering Education Through Technology
+
+*Production-ready educational management system built with modern .NET 9.0, React, and shadcn/ui*

@@ -12,7 +12,8 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
-import { LogOut, Settings, ChevronDown, Shield, GraduationCap, BookOpen } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
+import { LogOut, Settings, ChevronDown, Shield, GraduationCap, BookOpen, Menu } from 'lucide-react';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -62,9 +63,73 @@ export function Header() {
               </div>
 
               <div className="flex items-center space-x-2">
-                <ThemeToggleButton />
+                {/* Mobile menu button */}
+                <div className="md:hidden">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-80">
+                      <SheetHeader>
+                        <SheetTitle>ProjectAthena</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-6 space-y-4">
+                        {/* User info */}
+                        <div className="flex items-center space-x-3 p-4 bg-muted rounded-lg">
+                          <UserAvatar user={{
+                            firstName: user.firstName || undefined,
+                            lastName: user.lastName || undefined,
+                            fullName: user.fullName || undefined,
+                            email: user.email || undefined
+                          }} size="md" />
+                          <div>
+                            <p className="font-medium">{user.fullName}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                            <Badge 
+                              variant={user.role === UserRole.Value3 ? 'destructive' : user.role === UserRole.Value2 ? 'secondary' : 'default'}
+                              className="text-xs mt-1"
+                            >
+                              {user.role === UserRole.Value3 && <Shield className="mr-1 h-3 w-3" />}
+                              {user.role === UserRole.Value2 && <BookOpen className="mr-1 h-3 w-3" />}
+                              {user.role === UserRole.Value1 && <GraduationCap className="mr-1 h-3 w-3" />}
+                              {getRoleName(user.role!)}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {/* Theme toggle */}
+                        <div className="p-4 border rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Theme</span>
+                            <ThemeToggleButton />
+                          </div>
+                        </div>
+                        
+                        {/* Logout button */}
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start" 
+                          onClick={logout}
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Log Out
+                        </Button>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
                 
-                <DropdownMenu>
+                {/* Desktop theme toggle */}
+                <div className="hidden md:block">
+                  <ThemeToggleButton />
+                </div>
+                
+                {/* Desktop user menu */}
+                <div className="hidden md:block">
+                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="ghost" 
@@ -118,6 +183,7 @@ export function Header() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               </div>
             </>
           )}

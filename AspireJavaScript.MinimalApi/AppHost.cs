@@ -50,10 +50,27 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Add JWT Authentication
-var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "ProjectAthena-SuperSecretKey-ForDevelopment-MinimumLength32Characters!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ProjectAthena.Api";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "ProjectAthena.Client";
+// Add JWT Authentication - PRODUCTION READY
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
+if (string.IsNullOrEmpty(jwtSecretKey))
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        jwtSecretKey = "ProjectAthena-SuperSecretKey-ForDevelopment-MinimumLength32Characters!";
+        Console.WriteLine("WARNING: Using development JWT secret. DO NOT USE IN PRODUCTION!");
+    }
+    else
+    {
+        throw new InvalidOperationException(
+            "JWT:SecretKey configuration is required for production. " +
+            "Please set it in User Secrets, Environment Variables, or Key Vault.");
+    }
+}
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? 
+    throw new InvalidOperationException("Jwt:Issuer configuration is required");
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? 
+    throw new InvalidOperationException("Jwt:Audience configuration is required");
 
 // Log JWT configuration for debugging
 var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger("JwtConfig");
@@ -205,10 +222,27 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors(static builder => 
-    builder.AllowAnyMethod()
-        .AllowAnyHeader()
-        .AllowAnyOrigin());
+
+// Configure CORS - PRODUCTION READY
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors(builder => 
+        builder.AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowAnyOrigin());
+}
+else
+{
+    // Production CORS - Configure with your actual frontend domain
+    var allowedOrigins = app.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+        ?? ["https://yourdomain.com"];
+    
+    app.UseCors(builder => 
+        builder.WithOrigins(allowedOrigins)
+            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            .WithHeaders("Authorization", "Content-Type", "Accept")
+            .AllowCredentials());
+}
 
 // Add authentication middleware
 app.UseAuthentication();

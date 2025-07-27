@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using ProjectAthena.Data.Models;
 using ProjectAthena.Dtos.Auth;
 using ProjectAthena.MinimalApi.Mappings;
@@ -26,7 +27,7 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
+    public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken = default)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || !user.IsActive)
@@ -64,7 +65,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<UserDto> RegisterAsync(RegisterRequestDto request)
+    public async Task<UserDto> RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken = default)
     {
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser != null)
@@ -91,7 +92,7 @@ public class AuthService : IAuthService
         return user.ToDto();
     }
 
-    public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)
+    public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request, CancellationToken cancellationToken = default)
     {
         var principal = _tokenService.GetPrincipalFromExpiredToken(request.RefreshToken);
         if (principal == null)
@@ -131,13 +132,13 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task LogoutAsync(string userId)
+    public async Task LogoutAsync(string userId, CancellationToken cancellationToken = default)
     {
         await _tokenService.RevokeRefreshTokenAsync(userId);
         _logger.LogInformation("User {UserId} logged out", userId);
     }
 
-    public async Task<UserDto> GetCurrentUserAsync(string userId)
+    public async Task<UserDto> GetCurrentUserAsync(string userId, CancellationToken cancellationToken = default)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null || !user.IsActive)
@@ -148,7 +149,7 @@ public class AuthService : IAuthService
         return user.ToDto();
     }
 
-    public async Task<UserDto> ChangePasswordAsync(string userId, ChangePasswordRequestDto request)
+    public async Task<UserDto> ChangePasswordAsync(string userId, ChangePasswordRequestDto request, CancellationToken cancellationToken = default)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null || !user.IsActive)
@@ -167,7 +168,7 @@ public class AuthService : IAuthService
         return user.ToDto();
     }
 
-    public Task<bool> ValidateTokenAsync(string token)
+    public Task<bool> ValidateTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -180,23 +181,29 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<List<UserDto>> GetAllUsersAsync()
+    public async Task<List<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default)
     {
-        var users = _userManager.Users.ToList(); // Include both active and inactive users
-        var userDtos = new List<UserDto>();
+        // Use async enumeration and avoid loading all users into memory at once
+        var users = await _userManager.Users
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        
+        // Use modern C# 12 collection expressions and LINQ for better performance
+        var userDtos = new List<UserDto>(users.Count);
 
         foreach (var user in users)
         {
             var roles = await _userManager.GetRolesAsync(user);
             var userDto = user.ToDto();
             
-            // Map role to numeric value - using role names for mapping
-            if (roles.Contains("Student"))
-                userDto.Role = ProjectAthena.Dtos.Enums.UserRole.Student;
-            else if (roles.Contains("Teacher"))
-                userDto.Role = ProjectAthena.Dtos.Enums.UserRole.Teacher;
-            else if (roles.Contains("Admin"))
-                userDto.Role = ProjectAthena.Dtos.Enums.UserRole.Admin;
+            // Use pattern matching for role assignment (modern C# approach)
+            userDto.Role = roles switch
+            {
+                var r when r.Contains("Admin") => ProjectAthena.Dtos.Enums.UserRole.Admin,
+                var r when r.Contains("Teacher") => ProjectAthena.Dtos.Enums.UserRole.Teacher,
+                var r when r.Contains("Student") => ProjectAthena.Dtos.Enums.UserRole.Student,
+                _ => ProjectAthena.Dtos.Enums.UserRole.Student // Default fallback
+            };
                 
             userDtos.Add(userDto);
         }
@@ -204,7 +211,7 @@ public class AuthService : IAuthService
         return userDtos;
     }
 
-    public async Task<UserDto> ActivateUserAsync(string userId)
+    public async Task<UserDto> ActivateUserAsync(string userId, CancellationToken cancellationToken = default)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
@@ -225,7 +232,7 @@ public class AuthService : IAuthService
         return user.ToDto();
     }
 
-    public async Task<UserDto> DeactivateUserAsync(string userId)
+    public async Task<UserDto> DeactivateUserAsync(string userId, CancellationToken cancellationToken = default)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
@@ -249,7 +256,7 @@ public class AuthService : IAuthService
         return user.ToDto();
     }
 
-    public async Task DeleteUserAsync(string userId)
+    public async Task DeleteUserAsync(string userId, CancellationToken cancellationToken = default)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
