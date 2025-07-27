@@ -82,7 +82,6 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 
 **Important**: Ensure Docker Desktop is running and the Docker engine is healthy before starting the application, as PostgreSQL runs in a Docker container.
 
-### Production Deployment Notes
 
 **Security Configuration**:
 - Set `Jwt:SecretKey` in production using:
@@ -93,6 +92,9 @@ ProjectAthena follows a modern microservices architecture using .NET Aspire for 
 - Use HTTPS in production environments
 
 **Build Verification**:
+
+**Note**: Before running these verification commands, ensure you've done a normal F5 run first to initialize the database and download Docker images.
+
 ```bash
 # Ensure 0 warnings and errors
 dotnet build --configuration Release
@@ -109,7 +111,7 @@ dotnet test
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/KostaKing/ProjectAthena
+   git clone https://github.com/KostaKing/ProjectAthena.git
    cd ProjectAthena
    ```
 
